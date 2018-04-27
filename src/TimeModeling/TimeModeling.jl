@@ -23,7 +23,8 @@ include("auxiliaryFunctions.jl")
 
 #############################################################################
 # Abstract vectors
-include("judiRHS.jl")   # RHS to be multiplied with linear operator
+include("judiWavefield.jl") # dense RHS (wavefield)
+include("judiRHS.jl")   # sparse RHS (point source(s))
 include("judiVector.jl")    # Julia data container
 
 #############################################################################

@@ -1,8 +1,8 @@
 
-time_modeling(model::Model, srcGeometry::Geometry, srcData, recGeometry::Geometry, recData, perturbation, srcnum::UnitRange{Int64}, op::Char, mode::Int64) = 
+time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData, perturbation, srcnum::UnitRange{Int64}, op::Char, mode::Int64) = 
     time_modeling(model, srcGeometry, srcData, recGeometry, recData, perturbation, srcnum, op, mode, Options())
 
-function time_modeling(model::Model, srcGeometry::Geometry, srcData, recGeometry::Geometry, recData, perturbation, srcnum::UnitRange{Int64}, op::Char, mode::Int64, options)
+function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData, perturbation, srcnum::UnitRange{Int64}, op::Char, mode::Int64, options)
 # time_modeling function for multiple sources. Depending on the operator and mode, this function distributes the sources
 # and if applicable the input data amongst the available workers.
 
@@ -25,21 +25,21 @@ function time_modeling(model::Model, srcGeometry::Geometry, srcData, recGeometry
             if op=='F' && mode==1
                 srcDataLocal = Array{Any}(1)
                 srcDataLocal[1] = srcData[j]
-                @async results[j] = time_modeling(model, srcGeometryLocal, srcDataLocal, recGeometryLocal, [], [], j, op, mode, options)
+                @async results[j] = time_modeling(model, srcGeometryLocal, srcDataLocal, recGeometryLocal, nothing, nothing, j, op, mode, options)
             elseif op=='F' && mode==-1
                 recDataLocal = Array{Any}(1)
                 recDataLocal[1] = recData[j]
-                @async results[j] = time_modeling(model, srcGeometryLocal, [], recGeometryLocal, recDataLocal, [], j, op, mode, options)
+                @async results[j] = time_modeling(model, srcGeometryLocal, nothing, recGeometryLocal, recDataLocal, nothing, j, op, mode, options)
             elseif op=='J' && mode==1
                 srcDataLocal = Array{Any}(1)
                 srcDataLocal[1] = srcData[j]
-                @async results[j] = time_modeling(model, srcGeometryLocal, srcDataLocal, recGeometryLocal, [], perturbation, j, op, mode, options)  
+                @async results[j] = time_modeling(model, srcGeometryLocal, srcDataLocal, recGeometryLocal, nothing, perturbation, j, op, mode, options)  
             elseif op=='J' && mode==-1
                 srcDataLocal = Array{Any}(1)
                 srcDataLocal[1] = srcData[j]
                 recDataLocal = Array{Any}(1)
                 recDataLocal[1] = recData[j]
-                @async results[j] = time_modeling(model, srcGeometryLocal, srcDataLocal, recGeometryLocal, recDataLocal, [], j, op, mode, options)  
+                @async results[j] = time_modeling(model, srcGeometryLocal, srcDataLocal, recGeometryLocal, recDataLocal, nothing, j, op, mode, options)  
             end
         end
     end

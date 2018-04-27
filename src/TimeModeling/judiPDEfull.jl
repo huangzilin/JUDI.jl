@@ -59,8 +59,8 @@ function judiModeling(info::Info,model::Model, srcGeometry::Geometry, recGeometr
     end
 
     return F = judiPDEfull{Float32,Float32}("Proj*F*Proj'", m, n, info, model, srcGeometry, recGeometry, options,
-                              src -> time_modeling(model, srcGeometry, src.data, recGeometry, [], [], srcnum, 'F', 1, options),
-                              rec -> time_modeling(model, srcGeometry, [], recGeometry, rec.data, [], srcnum, 'F', -1, options),
+                              src -> time_modeling(model, srcGeometry, src.data, recGeometry, nothing, nothing, srcnum, 'F', 1, options),
+                              rec -> time_modeling(model, srcGeometry, nothing, recGeometry, rec.data, nothing, srcnum, 'F', -1, options),
                               )
 end
 

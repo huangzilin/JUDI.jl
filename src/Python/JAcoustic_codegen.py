@@ -41,7 +41,7 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
     m, rho, damp = model.m, model.rho, model.damp
 
     # Create the forward wavefield
-    if save is False:
+    if save is False and rec_coords is not None:
         u = TimeFunction(name='u', grid=model.grid, time_order=2, space_order=space_order)
     else:
         u = TimeFunction(name='u', grid=model.grid, time_order=2, space_order=space_order, save=nt)
@@ -50,29 +50,36 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
     ulaplace, rho = acoustic_laplacian(u, rho)
     H = symbols('H')
     eqn = m / rho * u.dt2 - H + damp * u.dt
-    #eqn = m * u.dt2 - u.laplace + damp * u.dt
     stencil = solve(eqn, u.forward, simplify=False, rational=False)[0]
     expression = [Eq(u.forward, stencil.subs({H : ulaplace}))]
 
     # Source symbol with input wavelet
-    src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
-    src.data[:] = wavelet[:]
-    src_term = src.inject(field=u.forward, offset=model.nbpml, expr=src * rho * dt**2 / m)
+    if src_coords is not None:
+        src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
+        src.data[:] = wavelet[:]
+        src_term = src.inject(field=u.forward, offset=model.nbpml, expr=src * rho * dt**2 / m)
+    else:
+        src_term = [Eq(wavelet.forward, wavelet * rho * dt**2 / m)]
+    expression += src_term
 
     # Data is sampled at receiver locations
-    rec = Receiver(name='rec', grid=model.grid, ntime=nt, coordinates=rec_coords)
-    rec_term = rec.interpolate(expr=u, offset=model.nbpml)
+    if rec_coords is not None:
+        rec = Receiver(name='rec', grid=model.grid, ntime=nt, coordinates=rec_coords)
+        rec_term = rec.interpolate(expr=u, offset=model.nbpml)
+        expression += rec_term
 
     # Create operator and run
     set_log_level('ERROR')
-    expression += src_term + rec_term
     subs = model.spacing_map
     subs[u.grid.time_dim.spacing] = dt
     op = Operator(expression, subs=subs, dse='advanced', dle='advanced',
                   name="Forward%s" % randint(1e5))
     if op_return is False:
         op()
-        return rec.data, u
+        if rec_coords is None:
+            return u
+        else:
+            return rec.data, u
     else:
         return op
 
@@ -87,7 +94,10 @@ def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=
     m, rho, damp = model.m, model.rho, model.damp
 
     # Create the adjoint wavefield
-    v = TimeFunction(name="v", grid=model.grid, time_order=2, space_order=space_order)
+    if src_coords is not None:
+        v = TimeFunction(name="v", grid=model.grid, time_order=2, space_order=space_order)
+    else:
+        v = TimeFunction(name="v", grid=model.grid, time_order=2, space_order=space_order, save=nt)
 
     # Set up PDE and rearrange
     vlaplace, rho = acoustic_laplacian(v, rho)
@@ -97,25 +107,31 @@ def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=
     expression = [Eq(v.backward, stencil.subs({H: vlaplace}))]
 
     # Adjoint source is injected at receiver locations
-    rec = Receiver(name='rec', grid=model.grid, ntime=nt, coordinates=rec_coords)
-    rec.data[:] = rec_data[:]
-    adj_src = rec.inject(field=v.backward, offset=model.nbpml, expr=rec * rho * dt**2 / m)
+    if rec_coords is not None:
+        rec = Receiver(name='rec', grid=model.grid, ntime=nt, coordinates=rec_coords)
+        rec.data[:] = rec_data[:]
+        adj_src = rec.inject(field=v.backward, offset=model.nbpml, expr=rec * rho * dt**2 / m)
+    else:
+        adj_src = [Eq(rec_data.backward, rec_data * rho * dt**2 / m)]
+    expression += adj_src
 
     # Data is sampled at source locations
-    src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
-    adj_rec = src.interpolate(expr=v, offset=model.nbpml)
+    if src_coords is not None:
+        src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
+        adj_rec = src.interpolate(expr=v, offset=model.nbpml)
+        expression += adj_rec
 
     # Create operator and run
     set_log_level('ERROR')
-    expression += adj_src + adj_rec
     subs = model.spacing_map
     subs[v.grid.time_dim.spacing] = dt
     op = Operator(expression, subs=subs, dse='advanced', dle='advanced',
                   name="Backward%s" % randint(1e5))
     op()
-
-    return src.data
-
+    if src_coords is None:
+        return v
+    else:
+        return src.data
 
 def forward_born(model, src_coords, wavelet, rec_coords, space_order=8, nb=40, isic=False, dt=None):
     clear_cache()
