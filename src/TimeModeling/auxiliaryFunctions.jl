@@ -5,7 +5,7 @@
 
 export ricker_wavelet, get_computational_nt, smooth10, damp_boundary, calculate_dt, setup_grid, setup_3D_grid
 export convertToCell, limit_model_to_receiver_area, extend_gradient, remove_out_of_bounds_receivers
-export time_resample, remove_padding, backtracking_linesearch
+export time_resample, remove_padding, backtracking_linesearch, subsample
 export generate_distribution, select_frequencies, process_physical_parameter
 
 function limit_model_to_receiver_area(srcGeometry::Geometry,recGeometry::Geometry,model::Model,buffer;pert=[])
@@ -339,6 +339,7 @@ function time_resample(data::Array,dt_in, geometry_out::Geometry;order=2)
     return dataInterp
 end
 
+subsample(x::Void) = x
 
 function generate_distribution(x; src_no=1)
 	# Generate interpolator to sample from probability distribution given
