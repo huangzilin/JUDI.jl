@@ -18,8 +18,16 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
         for j=1:numSources
             
             # local geometry for current position
-            srcGeometryLocal = subsample(srcGeometry,j)
-            recGeometryLocal = subsample(recGeometry,j)
+            if srcGeometry == nothing
+                srcGeometryLocal = nothing
+            else
+                srcGeometryLocal = subsample(srcGeometry,j)
+            end
+            if recGeometry == nothing
+                recGeometryLocal = nothing
+            else
+                recGeometryLocal = subsample(recGeometry,j)
+            end
 
             # Parallelization
             if op=='F' && mode==1

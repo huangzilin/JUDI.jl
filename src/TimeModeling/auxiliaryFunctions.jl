@@ -185,9 +185,9 @@ function get_computational_nt(srcGeometry, recGeometry, model::Model)
     nt = Array{Any}(nsrc)
     dtComp = calculate_dt(model.n,model.d,model.o,sqrt.(1./model.m),model.rho)
     for j=1:nsrc
-        ntRec = Int(trunc(recGeometry.dt[j]*(recGeometry.nt[j]-1) / dtComp))
-        ntSrc = Int(trunc(srcGeometry.dt[j]*(srcGeometry.nt[j]-1) / dtComp))
-        nt[j] = max(Int(trunc(ntRec)), Int(trunc(ntSrc)))
+        ntRec = recGeometry.dt[j]*(recGeometry.nt[j]-1) / dtComp
+        ntSrc = srcGeometry.dt[j]*(srcGeometry.nt[j]-1) / dtComp
+        nt[j] = max(Int(ceil(ntRec)), Int(ceil(ntSrc)))
     end
     return nt
 end
