@@ -49,7 +49,7 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
     # Set up PDE and rearrange
     ulaplace, rho = acoustic_laplacian(u, rho)
     H = symbols('H')
-    eqn = m / rho * u.dt2 - H + damp * u.dt
+    eqn = m / rho * u.dt2 - H + damp * u.dt - (wavelet if isinstance(wavelet, TimeFunction) else 0)
     stencil = solve(eqn, u.forward, simplify=False, rational=False)[0]
     expression = [Eq(u.forward, stencil.subs({H : ulaplace}))]
 
@@ -58,9 +58,9 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
         src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
         src.data[:] = wavelet[:]
         src_term = src.inject(field=u.forward, offset=model.nbpml, expr=src * rho * dt**2 / m)
-    else:
-        src_term = [Eq(wavelet.forward, wavelet * rho * dt**2 / m)]
-    expression += src_term
+        expression += src_term
+    #else:
+    #    src_term = [Eq(u.forward, wavelet * rho * dt**2 / m)]
 
     # Data is sampled at receiver locations
     if rec_coords is not None:
@@ -102,7 +102,7 @@ def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=
     # Set up PDE and rearrange
     vlaplace, rho = acoustic_laplacian(v, rho)
     H = symbols('H')
-    eqn = m / rho * v.dt2 - H - damp * v.dt
+    eqn = m / rho * v.dt2 - H - damp * v.dt - (rec_data if isinstance(rec_data, TimeFunction) else 0)
     stencil = solve(eqn, v.backward, simplify=False, rational=False)[0]
     expression = [Eq(v.backward, stencil.subs({H: vlaplace}))]
 
@@ -111,9 +111,9 @@ def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=
         rec = Receiver(name='rec', grid=model.grid, ntime=nt, coordinates=rec_coords)
         rec.data[:] = rec_data[:]
         adj_src = rec.inject(field=v.backward, offset=model.nbpml, expr=rec * rho * dt**2 / m)
-    else:
-        adj_src = [Eq(rec_data.backward, rec_data * rho * dt**2 / m)]
-    expression += adj_src
+        expression += adj_src
+    #else:
+        #adj_src = [Eq(v.backward, rec_data * rho * dt**2 / m)]
 
     # Data is sampled at source locations
     if src_coords is not None:
