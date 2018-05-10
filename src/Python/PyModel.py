@@ -152,7 +152,8 @@ class Model(object):
         # The CFL condtion is then given by
         # dt <= coeff * h / (max(velocity))
         coeff = 0.38 if len(self.shape) == 3 else 0.42
-        return self.dtype(coeff * np.min(self.spacing) / (self.scale*np.max(self.vp)))
+        dt = self.dtype(coeff * np.min(self.spacing) / (self.scale*np.max(self.vp)))
+        return 0.001 * int(1000.*dt)
 
     @property
     def vp(self):
