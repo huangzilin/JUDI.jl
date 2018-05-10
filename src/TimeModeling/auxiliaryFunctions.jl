@@ -333,7 +333,7 @@ end
 
 function time_resample(data::Array,dt_in, geometry_out::Geometry;order=2)
 
-    if dt_new==geometry_in.dt[1]
+    if dt_in==geometry_out.dt[1]
         return data
     else
         geometry = deepcopy(geometry_out)
