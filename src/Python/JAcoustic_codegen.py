@@ -321,14 +321,16 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     # Create operator and run
     set_log_level('ERROR')
     expression += src_term + rec_term
-    op = Operator(expression, subs=model.spacing_map, dse='advanced', dle='advanced',
+    subs = model.spacing_map
+    subs[u.grid.time_dim.spacing] = dt
+    op = Operator(expression, subs=subs, dse='advanced', dle='advanced',
                   name="Forward%s" % randint(1e5))
     op()
-
+    
     return rec.data, ufr, ufi
 
 
-def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8, nb=40, dt=None):
+def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8, nb=40, dt=None, isic=False):
     clear_cache()
 
     # Parameters
@@ -356,14 +358,27 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     adj_src = rec.inject(field=v.backward, offset=model.nbpml, expr=rec * dt**2 / m)
 
     # Gradient update
-    gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v)]
+    if isic is True:
+        if len(model.shape) == 2:
+            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v*model.m -
+                                                       (ufr.dx*cos(2*np.pi*f*time*dt) - ufi.dx*sin(2*np.pi*f*time*dt))*v.dx/nt -
+                                                       (ufr.dy*cos(2*np.pi*f*time*dt) - ufi.dy*sin(2*np.pi*f*time*dt))*v.dy/nt)]
+        else:
+            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v*model.m -
+                                                       (ufr.dx*cos(2*np.pi*f*time*dt) - ufi.dx*sin(2*np.pi*f*time*dt))*v.dx/nt -
+                                                       (ufr.dy*cos(2*np.pi*f*time*dt) - ufi.dy*sin(2*np.pi*f*time*dt))*v.dy/nt - 
+                                                       (ufr.dz*cos(2*np.pi*f*time*dt) - ufi.dz*sin(2*np.pi*f*time*dt))*v.dz/nt)]
+    else:
+        gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v)]
 
     # Create operator and run
     set_log_level('ERROR')
     expression += adj_src + gradient_update
-    op = Operator(expression, subs=model.spacing_map, dse='advanced', dle='advanced',
+    subs = model.spacing_map
+    subs[v.grid.time_dim.spacing] = dt
+    op = Operator(expression, subs=subs, dse='advanced', dle='advanced',
                   name="Gradient%s" % randint(1e5))
     op()
     clear_cache()
-
     return gradient.data
+
