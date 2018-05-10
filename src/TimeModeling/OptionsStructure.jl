@@ -77,3 +77,11 @@ Options(;space_order=8,retry_n=0,limit_m=false,buffer_size=1e3, save_data_to_dis
     Options(space_order,retry_n,limit_m,buffer_size,save_data_to_disk,file_path,file_name, sum_padding, save_wavefield, optimal_checkpointing, frequencies, isic)
 
 
+function subsampling(options::Options, srcnum)
+    opt_out = deepcopy(options)
+    opt_out.frequencies = Array{Any}(1)
+    opt_out.frequencies[1] = options.frequencies[srcnum]
+    return opt_out
+end
+
+

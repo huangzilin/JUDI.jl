@@ -291,7 +291,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
         grad = pycall(ac.adjoint_born, Array{Float32, length(modelPy[:shape])}, modelPy, PyReverseDims(rec_coords'), PyReverseDims(dIn'), op_forward=op_F,
                       space_order=options.space_order, nb=modelPy[:nbpml], is_residual=true, isic=options.isic)
     elseif ~isempty(options.frequencies)    # gradient in frequency domain
-        typeof(options.frequencies) == Array{Any,1} && (options.frequencies = options.frequencies[srcnum])
+        typeof(options.frequencies) == Array{Any,1} && (options.frequencies = options.frequencies[1])
         d_pred, uf_real, uf_imag = pycall(ac.forward_freq_modeling, PyObject, modelPy, PyReverseDims(src_coords'), PyReverseDims(qIn'), PyReverseDims(rec_coords'),
                                           options.frequencies, space_order=options.space_order, nb=modelPy[:nbpml])
         grad = pycall(ac.adjoint_freq_born, Array{Float32, length(modelPy[:shape])}, modelPy, PyReverseDims(rec_coords'), PyReverseDims(dIn'),
