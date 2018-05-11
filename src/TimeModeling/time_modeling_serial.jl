@@ -30,11 +30,20 @@ function time_modeling(model_full::Model, srcGeometry, srcData, recGeometry, rec
             rho=process_physical_parameter(model.rho, dims), space_order=options.space_order)
     end
     
+    # Load shot record if stored on disk
+    if recData != nothing
+        if typeof(recData[1]) == SeisIO.SeisCon
+            recDataCell = Array{Any}(1); recDataCell[1] = convert(Array{Float32,2},recData[1][1].data); recData = recDataCell
+        elseif typeof(recData[1]) == String
+            recData = load(recData[1])["d"].data
+        end
+    end
+
     # Remove receivers outside the modeling domain (otherwise leads to segmentation faults)
     if mode==1 && recGeometry != nothing
         recGeometry = remove_out_of_bounds_receivers(recGeometry, model)
     elseif mode==-1 && recGeometry != nothing
-        recGeometry, dIn = remove_out_of_bounds_receivers(recGeometry, recData, model)
+        recGeometry, recData = remove_out_of_bounds_receivers(recGeometry, recData, model)
     end
 
     argout = devito_interface(modelPy, srcGeometry, srcData, recGeometry, recData, dm, options)
@@ -90,11 +99,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
-    if typeof(recData[1]) == SeisIO.SeisCon
-        recDataCell = Array{Any}(1); recDataCell[1] = convert(Array{Float32,2},recData[1][1].data); recData = recDataCell
-    elseif typeof(recData[1]) == String
-        recData = load(recData[1])["d"].data
-    end
     dIn = time_resample(recData[1],recGeometry,dtComp)[1]
     ntComp = size(dIn,1)
     ntSrc = Int(trunc(srcGeometry.t[1]/dtComp + 1))
@@ -140,11 +144,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
-    if typeof(recData[1]) == SeisIO.SeisCon
-        recDataCell = Array{Any}(1); recDataCell[1] = convert(Array{Float32,2},recData[1][1].data); recData = recDataCell
-    elseif typeof(recData[1]) == String
-        recData = load(recData[1])["d"].data
-    end
     dIn = time_resample(recData[1],recGeometry,dtComp)[1]
     ntComp = size(dIn,1)
 
@@ -276,11 +275,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
-    if typeof(recData[1]) == SeisIO.SeisCon
-        recDataCell = Array{Any}(1); recDataCell[1] = convert(Array{Float32,2},recData[1][1].data); recData = recDataCell
-    elseif typeof(recData[1]) == String
-        recData = load(recData[1])["d"].data
-    end
     qIn = time_resample(srcData[1],srcGeometry,dtComp)[1]
     dIn = time_resample(recData[1],recGeometry,dtComp)[1]
     

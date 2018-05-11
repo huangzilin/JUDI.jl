@@ -112,7 +112,7 @@ function remove_out_of_bounds_receivers(recGeometry::Geometry, recData::Array, m
         idx_xrec = find(x -> x > xmin, recGeometry.xloc[1])
         recGeometry.xloc[1] = recGeometry.xloc[1][idx_xrec]
         recGeometry.zloc[1] = recGeometry.zloc[1][idx_xrec]
-        recData = recData[:, idx_xrec]
+        recData[1] = recData[1][:, idx_xrec]
     end
 
     # For 3D shot records, scan also y-receivers
@@ -121,7 +121,7 @@ function remove_out_of_bounds_receivers(recGeometry::Geometry, recData::Array, m
         idx_yrec = find(x -> x > ymin, recGeometry.yloc[1])
         recGeometry.yloc[1] = recGeometry.yloc[1][idx_yrec]
         recGeometry.zloc[1] = recGeometry.zloc[1][idx_yrec]
-        recData = recData[:, idx_yrec]
+        recData[1] = recData[1][:, idx_yrec]
     end
     return recGeometry, recData
 end
