@@ -12,10 +12,10 @@ type Options
     limit_m::Bool
     buffer_size::Real
     save_data_to_disk::Bool
+    save_wavefield_to_disk::Bool
     file_path::String
     file_name::String
     sum_padding::Bool
-    save_wavefield::Bool
     optimal_checkpointing::Bool
     frequencies::Array
     isic::Bool
@@ -29,6 +29,7 @@ end
         buffer_size::Real
         save_rate::Real
         save_data_to_disk::Bool
+        save_wavefield_to_disk::Bool
         file_path::String
         file_name::String
         sum_padding::Bool
@@ -49,13 +50,13 @@ Options structure for seismic modeling.
 
 `save_data_to_disk`: if `true`, saves shot records as separate SEG-Y files
 
+`save_wavefield_to_disk`: If wavefield is return value, save wavefield to disk as pickle file
+
 `file_path`: path to directory where data is saved
 
 `file_name`: shot records will be saved as specified file name plus its source coordinates
 
 `sum_padding`: when removing the padding area of the gradient, sum into boundary rows/columns for true adjoints
-
-`save_wavefield`: save forward wavefields and return as a second argument: (data, wavefield) = Pr*F*Ps'*q
 
 `optimal_checkpointing`: instead of saving the forward wavefield, recompute it using optimal checkpointing
 
@@ -69,12 +70,12 @@ Constructor
 
 All arguments are optional keyword arguments with the following default values:
 
-    Options(;retry_n=0, limit_m=false, buffer_size=1e3, save_data_to_disk=false, file_path=pwd(), 
-            file_name="shot", sum_padding=false, save_wavefield=false, optimal_checkpointing=false, frequencies=[], isic=false)
+    Options(;retry_n=0, limit_m=false, buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path=pwd(), 
+            file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], isic=false)
 
 """
-Options(;space_order=8,retry_n=0,limit_m=false,buffer_size=1e3, save_data_to_disk=false, file_path="", file_name="shot", sum_padding=false, save_wavefield=false, optimal_checkpointing=false, frequencies=[], isic=false) = 
-    Options(space_order,retry_n,limit_m,buffer_size,save_data_to_disk,file_path,file_name, sum_padding, save_wavefield, optimal_checkpointing, frequencies, isic)
+Options(;space_order=8,retry_n=0,limit_m=false,buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path="", file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], isic=false) = 
+    Options(space_order,retry_n,limit_m,buffer_size,save_data_to_disk,save_wavefield_to_disk,file_path,file_name, sum_padding, optimal_checkpointing, frequencies, isic)
 
 
 function subsample(options::Options, srcnum)

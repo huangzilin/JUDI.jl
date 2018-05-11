@@ -12,7 +12,7 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
 
     numSources = length(srcnum)
     results = Array{Any}(numSources)
-    
+        
     # Process shots from source channel asynchronously
     @sync begin
         for j=1:numSources
@@ -29,6 +29,7 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
                 recGeometryLocal = subsample(recGeometry,j)
             end
             opt_local = subsample(options,j)
+            numSources > 1 && (opt_local.save_wavefield_to_disk=true)    # don't collect wavefields on master
 
             # Parallelization
             if op=='F' && mode==1

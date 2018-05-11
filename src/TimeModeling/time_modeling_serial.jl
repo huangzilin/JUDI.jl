@@ -131,7 +131,8 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
                space_order=options.space_order, nb=modelPy[:nbpml])
 
     # Output forward wavefield as judiWavefield
-    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), u)
+    options.save_wavefield_to_disk && (u = dump_wavefield(u))
+    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), dtComp, u)
 end
 
 # v = F'*Pr'*d_obs
@@ -156,7 +157,8 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
                space_order=options.space_order, nb=modelPy[:nbpml])
 
     # Output adjoint wavefield as judiWavefield
-    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), v)
+    options.save_wavefield_to_disk && (v = dump_wavefield(v))
+    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), dtComp, v)
 end
 
 # d_obs = Pr*F*u
@@ -164,7 +166,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
   
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
-    ntComp = srcData[1][:shape][1]
+    #ntComp = srcData[1][:shape][1]
     ntRec = Int(trunc(recGeometry.t[1]/dtComp + 1))
 
     # Set up coordinates with devito dimensions
@@ -174,7 +176,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
     # Devito call
     dOut = pycall(ac.forward_modeling, PyObject, modelPy, nothing, srcData[1], PyReverseDims(rec_coords'), 
                   space_order=options.space_order, nb=modelPy[:nbpml])[1]
-    ntRec > ntComp && (dOut = [dOut zeros(size(dOut,1), ntRec - ntComp)])
+    #ntRec > ntComp && (dOut = [dOut zeros(size(dOut,1), ntRec - ntComp)])
     dOut = time_resample(dOut,dtComp,recGeometry)
 
     # Output shot record as judiVector
@@ -190,7 +192,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
-    ntComp = recData[1][:shape][1]
+    #ntComp = recData[1][:shape][1]
     ntSrc = Int(trunc(srcGeometry.t[1]/dtComp + 1))
 
     # Set up coordinates with devito dimensions
@@ -200,7 +202,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     # Devito call
     qOut = pycall(ac.adjoint_modeling, Array{Float32,2}, modelPy, PyReverseDims(src_coords'), nothing, recData[1],
                   space_order=options.space_order, nb=modelPy[:nbpml])
-    ntSrc > ntComp && (qOut = [qOut zeros(size(qOut), ntSrc - ntComp)])
+    #ntSrc > ntComp && (qOut = [qOut zeros(size(qOut), ntSrc - ntComp)])
     qOut = time_resample(qOut,dtComp,srcGeometry)
 
     # Output adjoint data as judiVector
@@ -219,7 +221,8 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
                   space_order=options.space_order, nb=modelPy[:nbpml])
     
     # Output forward wavefield as judiWavefield
-    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), u)
+    options.save_wavefield_to_disk && (u = dump_wavefield(u))
+    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), dtComp, u)
 end
 
 # v_out = F'*v_in
@@ -234,7 +237,8 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
                   space_order=options.space_order, nb=modelPy[:nbpml])
 
     # Output adjoint wavefield as judiWavefield
-    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), v)
+    options.save_wavefield_to_disk && (v = dump_wavefield(v))
+    return judiWavefield(Info(prod(modelPy[:shape]), 1, ntComp), dtComp, v)
 end
 
 # d_lin = J*dm

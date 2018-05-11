@@ -5,7 +5,7 @@
 # Authors: Philipp Witte (pwitte@eos.ubc.ca), Henryk Modzelewski (hmodzelewski@eos.ubc.ca)
 # Date: June 2017
 
-export judiWavefield, judiWavefieldException, judiDFTwavefield, muteWavefield
+export judiWavefield, judiWavefieldException, judiDFTwavefield, muteWavefield, dump_wavefield
 
 ############################################################
 
@@ -14,6 +14,7 @@ type judiWavefield{vDT<:Number} <: joAbstractLinearOperator{vDT,vDT}
 	m::Integer
 	n::Integer
 	info::Info
+    dt
 	data
 end
 
@@ -26,7 +27,7 @@ end
 
 ## outer constructors
 
-function judiWavefield(info,data::Union{Array, PyCall.PyObject}; vDT::DataType=Float32)
+function judiWavefield(info,dt::Real,data::Union{Array, PyCall.PyObject, String}; vDT::DataType=Float32)
 	
 	# length of vector
 	m = info.n * sum(info.nt)
@@ -35,14 +36,14 @@ function judiWavefield(info,data::Union{Array, PyCall.PyObject}; vDT::DataType=F
 	for j=1:info.nsrc
 		dataCell[j] = data
 	end
-	return judiWavefield{vDT}("judiWavefield",m,n,info,dataCell)
+	return judiWavefield{vDT}("judiWavefield",m,n,info,dt,dataCell)
 end
 
-function judiWavefield(info,data::Array{Any,1};vDT::DataType=Float32)
+function judiWavefield(info,dt::Real,data::Array{Any,1};vDT::DataType=Float32)
 	# length of vector
 	m = info.n * sum(info.nt)
 	n = 1
-	return judiWavefield{vDT}("judiWavefield",m,n,info,data)
+	return judiWavefield{vDT}("judiWavefield",m,n,info,dt,data)
 end
 
 
@@ -51,15 +52,15 @@ end
 
 # conj(jo)
 conj{vDT}(A::judiWavefield{vDT}) =
-	judiWavefield{vDT}("conj("*A.name*")",A.m,A.n,A.info,A.data)
+	judiWavefield{vDT}("conj("*A.name*")",A.m,A.n,A.info,A.dt,A.data)
 
 # transpose(jo)
 transpose{vDT}(A::judiWavefield{vDT}) =
-	judiWavefield{vDT}(""*A.name*".'",A.n,A.m,A.info,A.data)
+	judiWavefield{vDT}(""*A.name*".'",A.n,A.m,A.info,A.dt,A.data)
    
 # ctranspose(jo)
 ctranspose{vDT}(A::judiWavefield{vDT}) =
-	judiWavefield{vDT}(""*A.name*"'",A.n,A.m,A.info,A.data)
+	judiWavefield{vDT}(""*A.name*"'",A.n,A.m,A.info,A.dt,A.data)
 
 ####################################################################
 
@@ -78,7 +79,7 @@ function vcat{avDT,bvDT}(a::judiWavefield{avDT},b::judiWavefield{bvDT})
 		nt[j] = b.info.nt[j-a.info.nsrc]
 	end
 	info = Info(a.info.n,nsrc,nt)
-	return judiWavefield(info,data)
+	return judiWavefield(info,a.dt,data)
 end
 
 # add and subtract, mulitply and divide, norms, dot ...
@@ -115,25 +116,6 @@ function fft_wavefield(x_in,mode)
 	return x
 end
 
-#function judiDFTwavefield(n; DDT::DataType=Float32,RDT::DataType=(DDT<:Real?Complex{DDT}:DDT))
-## JOLI wrapper for the DFT of wavefield vector along time
-#
-#	F = joLinearFunctionFwdT(n,n,
-#							 v -> fft_wavefield(v,1),
-# 							 w -> fft_wavefield(w,-1),
-#							 DDT,RDT,name="DFT of wavefields along time")
-#	return F
-#end
-
-# Overload multiplication for judiDFT*judiWavefield
-#function *{ADDT,ARDT,vDT}(A::joLinearFunction{ADDT,ARDT},v::judiWavefield{vDT})
-#	A.n == size(v,1) || throw(judiWavefieldException("shape mismatch"))
-#	jo_check_type_match(ADDT,vDT,join(["DDT for *(judiDFT,judiWavefield):",A.name,typeof(A),vDT]," / "))
-#	V = A.fop(v)
-#	jo_check_type_match(ARDT,eltype(V),join(["RDT from *(judiDFT,judiWavefield):",A.name,typeof(A),eltype(V)]," / "))
-#	return V
-#end
-
 # Sampling mask to extract wavefields from full vector
 subsample(u::judiWavefield,srcnum) = judiWavefield(u.info,u.data[srcnum];vDT=eltype(u))
 
@@ -146,6 +128,35 @@ function muteWavefield(u_in::judiWavefield,ts_keep)
 		u.data[j][zero_idx,:,:] *= 0.f0
 	end
 	return u
+end
+
+# norm
+function norm{avDT}(a::judiWavefield{avDT}, p::Real=2)
+    x = 0.f0
+    for j=1:a.info.nsrc
+        if typeof(a.data[j]) == String
+            x += a.dt * sum(np.abs(np.load(a.data[j])).^p)
+        else
+            x += a.dt * sum(np.abs(a.data[j]["data"]).^p)
+        end
+    end
+    return x^(1.f0/p)
+end
+
+# Save wavefield to disk
+function dump_wavefield(u::PyObject)
+    name = join(["wavefield_", randstring(8), ".dat"])
+    u["data"][:dump](name)
+    return name
+end
+
+function dump_wavefield(u::judiWavefield)
+    name = Array{Any}(u.info.nsrc)
+    for j=1:u.info.nsrc
+        name[j] = join(["wavefield_", randstring(8), ".dat"])
+        u.data[j]["data"][:dump](name[j])
+    end
+    return name
 end
 
 

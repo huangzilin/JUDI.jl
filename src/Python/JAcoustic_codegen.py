@@ -34,6 +34,10 @@ def acoustic_laplacian(v, rho):
 def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_order=8, nb=40, op_return=False, dt=None):
     clear_cache()
 
+    # If wavelet is file, read it
+    if isinstance(wavelet, str):
+        wavelet = np.load(wavelet)
+
     # Parameters
     nt = wavelet.shape[0]
     if dt is None:
@@ -92,6 +96,10 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
 
 def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=40, dt=None):
     clear_cache()
+
+    # If wavelet is file, read it
+    if isinstance(rec_data, str):
+        rec_data = np.load(rec_data)
 
     # Parameters
     nt = rec_data.shape[0]
@@ -381,4 +389,5 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     op()
     clear_cache()
     return gradient.data
+
 
