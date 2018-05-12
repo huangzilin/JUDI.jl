@@ -118,12 +118,16 @@ println("Test modeling, save data to disk")
 
 
 # Options structures
-opt = Options(save_data_to_disk=true,
+opt = Options(limit_m = true,
+              buffer_size = 100f0,
+              save_data_to_disk=true,
 			  file_path=pwd(),	# path to files
 			  file_name="shot_record"	# saves files as file_name_xsrc_ysrc.segy
 			  )
 
-opt0 = Options(save_data_to_disk=true,
+opt0 = Options(limit_m = true,
+              buffer_size = 100f0,
+              save_data_to_disk=true,
 			  file_path=pwd(),	# path to files
 			  file_name="linearized_shot_record"	# saves files as file_name_xsrc_ysrc.segy
 			  )

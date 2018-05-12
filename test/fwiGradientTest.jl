@@ -38,7 +38,7 @@ zrec = linspace(100f0,100f0,nxrec)
 
 # receiver sampling and recording time
 timeR = 1000f0	# receiver recording time [ms]
-dtR = calculate_dt(n,d,o,v,rho)	# receiver sampling interval
+dtR = 4f0	# receiver sampling interval
 
 # Set up receiver structure
 recGeometry = Geometry(xrec,yrec,zrec;dt=dtR,t=timeR,nsrc=nsrc)
@@ -50,7 +50,7 @@ zsrc = convertToCell([50f0])
 
 # source sampling and number of time steps
 timeS = 1000f0
-dtS = calculate_dt(n,d,o,v,rho)	# receiver sampling interval
+dtS = 4f0	# receiver sampling interval
 
 # Set up source structure
 srcGeometry = Geometry(xsrc,ysrc,zsrc;dt=dtS,t=timeS)
