@@ -3,8 +3,8 @@
 # Date: January 2017
 #
 
-using PyCall, PyPlot, JUDI.TimeModeling
-print("adjoint test for acoustic")
+using PyCall, PyPlot, JUDI.TimeModeling, Base.Test
+
 ## Set up model structure
 n = (160, 170)	# (x,y,z) or (x,z)
 d = (10.,10.)
@@ -79,22 +79,20 @@ d1 = F*qr
 q_hat = F'*d1
 
 # Result F
-println(abs(dot(d1,d_hat)))
-println(abs(dot(q,q_hat)))
-println("Residual: ", abs(dot(d1,d_hat) - dot(q,q_hat)))
-println("Ratio: ", abs(dot(d1,d_hat)/dot(q,q_hat)))
+a = dot(d1, d_hat)
+b = dot(q, q_hat)
+@test isapprox(a/b - 1, 0, atol=1f-5)
 
 # Linearized modeling
 J = judiJacobian(F,q)
 
 dD_hat = J*dm
-dm_hat = J'*dD_hat
+dm_hat = J'*d_hat
 
-# Result J
-println(dot(dD_hat,dD_hat))
-println(dot(dm,dm_hat))
-println("Residual: ", abs(dot(dD_hat,dD_hat) - dot(dm,dm_hat)))
-println("Ratio: ", abs(dot(dD_hat,dD_hat)/dot(dm,dm_hat)))
+c = dot(dD_hat, d_hat)
+d = dot(dm, dm_hat)
+@test isapprox(c/d - 1, 0, atol=1f-5)
+
 
 
 

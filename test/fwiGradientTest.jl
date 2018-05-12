@@ -4,7 +4,7 @@
 # Date: January 2017
 #
 
-using PyCall, PyPlot, JUDI.TimeModeling
+using PyCall, PyPlot, JUDI.TimeModeling, Base.Test
 
 ## Set up model structure
 n = (120,100)	# (x,y,z) or (x,z)
@@ -95,13 +95,20 @@ for j=1:iter
 	h = h/2f0
 end
 
-# Plot errors
-loglog(h_all, error1); loglog(h_all, 1e2*h_all)
-loglog(h_all, error2); loglog(h_all, 1e2*h_all.^2)
-legend([L"$\Phi(m) - \Phi(m0)$", "1st order", L"$\Phi(m) - \Phi(m0) - \nabla \Phi \delta m$", "2nd order"], loc="lower right")
-xlabel("h")
-ylabel(L"Error $||\cdot||^\infty$")
-title("FWI gradient test")
-#axis((h_all[end], h_all[1], 1.0e-8,500))
+# Check error decay
+rate_0th_order = 2^(iter - 1)   # error decays w/ factor 2
+rate_1st_order = 4^(iter - 1)   # error decays w/ factor 4
 
+@test error1[end] <= error1[1] / rate_0th_order 
+@test error2[end] <= error2[1] / rate_1st_order
+
+# Plot errors
+if isinteractive()
+    loglog(h_all, error1); loglog(h_all, 1e2*h_all)
+    loglog(h_all, error2); loglog(h_all, 1e2*h_all.^2)
+    legend([L"$\Phi(m) - \Phi(m0)$", "1st order", L"$\Phi(m) - \Phi(m0) - \nabla \Phi \delta m$", "2nd order"], loc="lower right")
+    xlabel("h")
+    ylabel(L"Error $||\cdot||^\infty$")
+    title("FWI gradient test")
+end
 

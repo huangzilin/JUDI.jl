@@ -71,7 +71,6 @@ opt = Options(limit_m = true,
               buffer_size = 100f0
 			  )
 
-
 # Setup operators
 Pr = judiProjection(info,recGeometry)
 F = judiModeling(info,model;options=opt)
