@@ -9,7 +9,7 @@ function time_modeling(model_full::Model, srcGeometry, srcData, recGeometry, rec
     typeof(srcGeometry) == GeometryOOC && (srcGeometry = Geometry(srcGeometry))
     length(model_full.n) == 3 ? dims = [3,2,1] : dims = [2,1]   # model dimensions for Python are (z,y,x) and (z,x)
 
-    # for 3D modeling, limit model to area with sources/receivers
+    # limit model to area with sources/receivers
     if options.limit_m == true
         model = deepcopy(model_full)
         if op=='J' && mode==1
@@ -46,7 +46,14 @@ function time_modeling(model_full::Model, srcGeometry, srcData, recGeometry, rec
         recGeometry, recData = remove_out_of_bounds_receivers(recGeometry, recData, model)
     end
 
+    # Devito interface
     argout = devito_interface(modelPy, srcGeometry, srcData, recGeometry, recData, dm, options)
+
+    # Extend gradient back to original model size
+    if op=='J' && mode==-1 && options.limit_m==true
+        argout = extend_gradient(model_full, model, reshape(argout, model.n))
+    end
+
     return argout
 end
 
@@ -303,9 +310,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     
     # Remove PML and return gradient as Array
     grad = remove_padding(grad,modelPy[:nbpml], true_adjoint=options.sum_padding)
-    if options.limit_m == true
-        grad = extend_gradient(model_full,model,grad)
-    end
     return vec(grad)
 end
 

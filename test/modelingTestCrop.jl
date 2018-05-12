@@ -30,8 +30,8 @@ model = Model(n,d,o,m; rho=rho)	# to include density call Model(n,d,o,m,rho)
 model0 = Model(n,d,o,m0; rho=rho)
 
 ## Set up receiver geometry
-nxrec = 120
-xrec = linspace(50.,1150.,nxrec)
+nxrec = 60
+xrec = linspace(50.,500.,nxrec)
 yrec = 0.
 zrec = linspace(50.,50.,nxrec)
 
@@ -43,7 +43,7 @@ dtR = 2.	# receiver sampling interval
 recGeometry = Geometry(xrec,yrec,zrec;dt=dtR,t=timeR,nsrc=nsrc)
 
 ## Set up source geometry (cell array with source locations for each shot)
-xsrc = convertToCell(linspace(100.,1100.,nsrc))
+xsrc = convertToCell(linspace(100.,20.,nsrc))
 ysrc = convertToCell(linspace(0.,0.,nsrc))
 zsrc = convertToCell(linspace(20.,20.,nsrc))
 
@@ -65,12 +65,17 @@ info = Info(prod(n),nsrc,ntComp)
 ######################## WITH DENSITY ############################################
 
 # Keep data in memory
-println("Test modeling with density, data in RAM")
+println("Test modeling without density, data in RAM")
+
+opt = Options(limit_m = true,
+              buffer_size = 100f0
+			  )
+
 
 # Setup operators
 Pr = judiProjection(info,recGeometry)
-F = judiModeling(info,model)
-F0 = judiModeling(info,model0)
+F = judiModeling(info,model;options=opt)
+F0 = judiModeling(info,model0;options=opt)
 Ps = judiProjection(info,srcGeometry)
 q = judiVector(srcGeometry,wavelet)
 
@@ -159,7 +164,7 @@ norm(d1)
 dot(d1,d1)
 
 rm("shot_record_100.0_0.0.segy")
-rm("shot_record_1100.0_0.0.segy")
+rm("shot_record_20.0_0.0.segy")
 rm("linearized_shot_record_100.0_0.0.segy")
-rm("linearized_shot_record_1100.0_0.0.segy")
+rm("linearized_shot_record_20.0_0.0.segy")
 
