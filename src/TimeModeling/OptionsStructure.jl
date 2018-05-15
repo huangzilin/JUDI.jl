@@ -18,6 +18,7 @@ type Options
     sum_padding::Bool
     optimal_checkpointing::Bool
     frequencies::Array
+    dft_subsampling_factor::Integer
     isic::Bool
 end
 
@@ -35,6 +36,7 @@ end
         sum_padding::Bool
         optimal_checkpointing::Bool
         frequencies::Array
+        dft_subsampling_factor::Integer
         isic::Bool
 
 
@@ -62,6 +64,8 @@ Options structure for seismic modeling.
 
 `frequencies`: calculate the FWI/LS-RTM gradient in the frequency domain for a given set of frequencies
 
+`dft_subsampling_factor`: compute on-the-fly DFTs on a time axis that is reduced by a given factor (default is 1)
+
 isic`: use linearized inverse scattering imaging condition
 
 
@@ -71,11 +75,11 @@ Constructor
 All arguments are optional keyword arguments with the following default values:
 
     Options(;retry_n=0, limit_m=false, buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path=pwd(), 
-            file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], isic=false)
+            file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], dft_subsampling_factor=[], isic=false)
 
 """
-Options(;space_order=8,retry_n=0,limit_m=false,buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path="", file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], isic=false) = 
-    Options(space_order,retry_n,limit_m,buffer_size,save_data_to_disk,save_wavefield_to_disk,file_path,file_name, sum_padding, optimal_checkpointing, frequencies, isic)
+Options(;space_order=8,retry_n=0,limit_m=false,buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path="", file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], dft_subsampling_factor=1, isic=false) = 
+    Options(space_order,retry_n,limit_m,buffer_size,save_data_to_disk,save_wavefield_to_disk,file_path,file_name, sum_padding, optimal_checkpointing, frequencies, dft_subsampling_factor, isic)
 
 
 function subsample(options::Options, srcnum)

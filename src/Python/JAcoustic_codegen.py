@@ -12,7 +12,7 @@ from numpy.random import randint
 from sympy import solve, cos, sin, expand, symbols
 from sympy import Function as fint
 from devito.logger import set_log_level
-from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache
+from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension
 from devito import first_derivative, left, right
 from PySource import PointSource, Receiver
 from PyModel import Model
@@ -290,7 +290,7 @@ def adjoint_born(model, rec_coords, rec_data, u=None, op_forward=None, is_residu
 
 ########################################################################################################################
 
-def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_order=8, nb=40, dt=None):
+def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_order=8, nb=40, dt=None, factor=None):
     # Forward modeling with on-the-fly DFT of forward wavefields
     clear_cache()
 
@@ -301,6 +301,13 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     m, damp = model.m, model.damp
     freq_dim = Dimension(name='freq_dim')
     time = model.grid.time_dim
+    if factor is None:
+        factor = int(1 / (dt*4*np.max(freq)))
+    if factor==1:
+        tsave = time
+    else:
+        tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
+    print("DFT subsampling factor: ", factor)
 
     # Create wavefields
     nfreq = freq.shape[0]
@@ -314,8 +321,8 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     eqn = m * u.dt2 - u.laplace + damp * u.dt
     stencil = solve(eqn, u.forward, simplify=False, rational=False)[0]
     expression = [Eq(u.forward, stencil)]
-    expression += [Eq(ufr, ufr + u*cos(2*np.pi*f*time*dt))]
-    expression += [Eq(ufi, ufi - u*sin(2*np.pi*f*time*dt))]
+    expression += [Eq(ufr, ufr + u*cos(2*np.pi*f*tsave*factor*dt))]
+    expression += [Eq(ufi, ufi - u*sin(2*np.pi*f*tsave*factor*dt))]
 
     # Source symbol with input wavelet
     src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
@@ -338,7 +345,7 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     return rec.data, ufr, ufi
 
 
-def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8, nb=40, dt=None, isic=False):
+def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8, nb=40, dt=None, isic=False, factor=None):
     clear_cache()
 
     # Parameters
@@ -348,6 +355,14 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     m, damp = model.m, model.damp
     nfreq = ufr.shape[0]
     time = model.grid.time_dim
+    if factor is None:
+        factor = int(1 / (dt*4*np.max(freq)))
+    if factor==1:
+        tsave = time
+    else:
+        tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
+    dtf = dt*factor
+    print("DFT subsampling factor: ", factor)
 
     # Create the forward and adjoint wavefield
     v = TimeFunction(name='v', grid=model.grid, time_order=2, space_order=space_order)
@@ -368,16 +383,16 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     # Gradient update
     if isic is True:
         if len(model.shape) == 2:
-            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v*model.m -
-                                                       (ufr.dx*cos(2*np.pi*f*time*dt) - ufi.dx*sin(2*np.pi*f*time*dt))*v.dx/nt -
-                                                       (ufr.dy*cos(2*np.pi*f*time*dt) - ufi.dy*sin(2*np.pi*f*time*dt))*v.dy/nt)]
+            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v*model.m -
+                                                       (ufr.dx*cos(2*np.pi*f*tsave*dtf) - ufi.dx*sin(2*np.pi*f*tsave*dtf))*v.dx/nt -
+                                                       (ufr.dy*cos(2*np.pi*f*tsave*dtf) - ufi.dy*sin(2*np.pi*f*tsave*dtf))*v.dy/nt)]
         else:
-            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v*model.m -
-                                                       (ufr.dx*cos(2*np.pi*f*time*dt) - ufi.dx*sin(2*np.pi*f*time*dt))*v.dx/nt -
-                                                       (ufr.dy*cos(2*np.pi*f*time*dt) - ufi.dy*sin(2*np.pi*f*time*dt))*v.dy/nt - 
-                                                       (ufr.dz*cos(2*np.pi*f*time*dt) - ufi.dz*sin(2*np.pi*f*time*dt))*v.dz/nt)]
+            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v*model.m -
+                                                       (ufr.dx*cos(2*np.pi*f*tsave*dtf) - ufi.dx*sin(2*np.pi*f*tsave*dtf))*v.dx/nt -
+                                                       (ufr.dy*cos(2*np.pi*f*tsave*dtf) - ufi.dy*sin(2*np.pi*f*tsave*dtf))*v.dy/nt - 
+                                                       (ufr.dz*cos(2*np.pi*f*tsave*dtf) - ufi.dz*sin(2*np.pi*f*tsave*dtf))*v.dz/nt)]
     else:
-        gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*time*dt) - ufi*sin(2*np.pi*f*time*dt))*v)]
+        gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v)]
 
     # Create operator and run
     set_log_level('ERROR')

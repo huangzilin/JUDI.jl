@@ -298,9 +298,9 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     elseif ~isempty(options.frequencies)    # gradient in frequency domain
         typeof(options.frequencies) == Array{Any,1} && (options.frequencies = options.frequencies[1])
         d_pred, uf_real, uf_imag = pycall(ac.forward_freq_modeling, PyObject, modelPy, PyReverseDims(src_coords'), PyReverseDims(qIn'), PyReverseDims(rec_coords'),
-                                          options.frequencies, space_order=options.space_order, nb=modelPy[:nbpml])
+                                          options.frequencies, space_order=options.space_order, nb=modelPy[:nbpml], factor=options.dft_subsampling_factor)
         grad = pycall(ac.adjoint_freq_born, Array{Float32, length(modelPy[:shape])}, modelPy, PyReverseDims(rec_coords'), PyReverseDims(dIn'),
-                      options.frequencies, uf_real, uf_imag, space_order=options.space_order, nb=modelPy[:nbpml], isic=options.isic)
+                      options.frequencies, uf_real, uf_imag, space_order=options.space_order, nb=modelPy[:nbpml], isic=options.isic, factor=options.dft_subsampling_factor)
     else
         u0 = pycall(ac.forward_modeling, PyObject, modelPy, PyReverseDims(src_coords'), PyReverseDims(qIn'), PyReverseDims(rec_coords'),
                     space_order=options.space_order, nb=modelPy[:nbpml], save=true)[2]
