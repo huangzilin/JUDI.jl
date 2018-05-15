@@ -7,7 +7,7 @@
 using JUDI.TimeModeling, PyPlot, JLD, SeisIO
 
 # Load Sigsbee model
-M = load("/scratch/slim/pwitte/models/Sigsbee_LSRTM.jld")
+M = load("/scratch/slim/shared/mathias-philipp/sigsbee2A/Sigsbee_LSRTM.jld")
 m = M["m"][1200:2200, 150:800]
 m0 = M["m0"][1200:2200, 150:800]
 dm = M["dm"][1200:2200, 150:800]
