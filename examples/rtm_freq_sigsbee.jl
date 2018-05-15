@@ -58,7 +58,7 @@ info = Info(prod(model.n),nsrc,ntComp)
 opt = Options(isic=true,
               save_data_to_disk=false,
               optimal_checkpointing=false,
-              dft_subsampling_factor=8
+              dft_subsampling_factor=1
               )
 
 # Setup operators
@@ -75,11 +75,19 @@ J.options.frequencies[1] = [0.015776, 0.024124, 0.0199241, 0.023742]    #select_
 
 # Impedance
 tic()
+d_lin1 = J*dm
+toc()
+tic()
+rtm1 = J'*d_lin1
+toc()
+figure(); imshow(reshape(rtm1, model0.n)')
+
+J.options.dft_subsampling_factor = 8
+tic()
 d_lin2 = J*dm
 toc()
 tic()
 rtm2 = J'*d_lin2
 toc()
-figure(); imshow(reshape(rtm1, model0.n)')
-
+figure(); imshow(reshape(rtm2, model0.n)')
 
