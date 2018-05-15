@@ -12,7 +12,7 @@ from numpy.random import randint
 from sympy import solve, cos, sin, expand, symbols
 from sympy import Function as fint
 from devito.logger import set_log_level
-from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension
+from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension
 from devito import first_derivative, left, right
 from PySource import PointSource, Receiver
 from PyModel import Model
@@ -31,7 +31,7 @@ def acoustic_laplacian(v, rho):
             Lap = 1 / rho * v.laplace
     return Lap, rho
 
-def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_order=8, nb=40, op_return=False, dt=None):
+def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_order=8, nb=40, free_surface=False, op_return=False, dt=None):
     clear_cache()
 
     # If wavelet is file, read it
@@ -65,6 +65,12 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
     stencil = solve(eqn, u.forward, simplify=False, rational=False)[0]
     expression = [Eq(u.forward, stencil.subs({H : ulaplace}))]
 
+    # Free surface
+    if free_surface is True:
+        fs = DefaultDimension(name="fs", default_value=int(space_order/2))
+        expression += [Eq(u.forward.subs({u.indices[-1]: model.nbpml - fs - 1}), 
+            -u.forward.subs({u.indices[-1]: model.nbpml + fs + 1}))]
+
     # Source symbol with input wavelet
     if src_coords is not None:
         src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
@@ -94,7 +100,7 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
         return op
 
 
-def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=40, dt=None):
+def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=40, free_surface=False, dt=None):
     clear_cache()
 
     # If wavelet is file, read it
@@ -126,6 +132,12 @@ def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=
 
     stencil = solve(eqn, v.backward, simplify=False, rational=False)[0]
     expression = [Eq(v.backward, stencil.subs({H: vlaplace}))]
+
+    # Free surface
+    if free_surface is True:
+        fs = DefaultDimension(name="fs", default_value=int(space_order/2))
+        expression += [Eq(v.forward.subs({v.indices[-1]: model.nbpml - fs - 1}), 
+            -v.forward.subs({v.indices[-1]: model.nbpml + fs + 1}))]
 
     # Adjoint source is injected at receiver locations
     if rec_coords is not None:
@@ -212,7 +224,7 @@ def forward_born(model, src_coords, wavelet, rec_coords, space_order=8, nb=40, i
     return rec.data
 
 
-def adjoint_born(model, rec_coords, rec_data, u=None, op_forward=None, is_residual=False, space_order=8, nb=40, isic=False, dt=None):
+def adjoint_born(model, rec_coords, rec_data, u=None, op_forward=None, is_residual=False, space_order=8, nb=40, isic=False, dt=None, n_checkpoints=None, maxmem=None):
     clear_cache()
 
     # Parameters
@@ -263,7 +275,8 @@ def adjoint_born(model, rec_coords, rec_data, u=None, op_forward=None, is_residu
     if op_forward is not None:
         rec = Receiver(name='rec', grid=model.grid, ntime=nt, coordinates=rec_coords)
         cp = DevitoCheckpoint([u])
-        n_checkpoints = None
+        if maxmem is not None:
+            n_checkpoints = int(np.floor(maxmem * 10**6 / (cp.size * u.data.itemsize)))
         wrap_fw = CheckpointOperator(op_forward, u=u, m=model.m, rec=rec)
         wrap_rev = CheckpointOperator(op, u=u, v=v, m=model.m, rec_g=rec_g)
 

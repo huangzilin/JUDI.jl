@@ -8,7 +8,7 @@ export Options, subsample
 # Object for velocity/slowness models
 type Options
     space_order::Integer
-    retry_n::Integer
+    free_surface::Bool
     limit_m::Bool
     buffer_size::Real
     save_data_to_disk::Bool
@@ -17,6 +17,8 @@ type Options
     file_name::String
     sum_padding::Bool
     optimal_checkpointing::Bool
+    num_checkpoints::Union{Integer, Void}
+    checkpoints_maxmem::Union{Real, Void}
     frequencies::Array
     dft_subsampling_factor::Integer
     isic::Bool
@@ -25,7 +27,7 @@ end
 """
     Options
         space_order::Integer
-        retry_n::Integer
+        free_surface::Bool
         limit_m::Bool
         buffer_size::Real
         save_rate::Real
@@ -35,6 +37,8 @@ end
         file_name::String
         sum_padding::Bool
         optimal_checkpointing::Bool
+        num_checkpoints::Integer
+        checkpoints_maxmem::Real
         frequencies::Array
         dft_subsampling_factor::Integer
         isic::Bool
@@ -44,7 +48,7 @@ Options structure for seismic modeling.
 
 `space_order`: finite difference space order for wave equation (default is 8, needs to be multiple of 4)
 
-`retry_n`: retry modeling operations in case of worker failure up to `retry_n` times
+`free_surface`: set to `true` to enable a free surface boundary condition.
 
 `limit_m`: for 3D modeling, limit modeling domain to area with receivers (saves memory)
 
@@ -62,11 +66,15 @@ Options structure for seismic modeling.
 
 `optimal_checkpointing`: instead of saving the forward wavefield, recompute it using optimal checkpointing
 
+`num_checkpoints`: number of checkpoints. If not supplied, is set to log(num_timesteps).
+
+`checkpoints_maxmem`: maximum amount of memory that can be allocated for checkpoints (MB)
+
 `frequencies`: calculate the FWI/LS-RTM gradient in the frequency domain for a given set of frequencies
 
 `dft_subsampling_factor`: compute on-the-fly DFTs on a time axis that is reduced by a given factor (default is 1)
 
-isic`: use linearized inverse scattering imaging condition
+`isic`: use linearized inverse scattering imaging condition
 
 
 Constructor
@@ -74,12 +82,14 @@ Constructor
 
 All arguments are optional keyword arguments with the following default values:
 
-    Options(;retry_n=0, limit_m=false, buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path=pwd(), 
-            file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], dft_subsampling_factor=[], isic=false)
+    Options(; space_order, free_surface, limit_m=false, buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path=pwd(), file_name="shot", 
+        sum_padding=false, optimal_checkpointing=false, num_checkpoints=log(nt), checkpoints_maxmem=[], frequencies=[], dft_subsampling_factor=[], isic=false)
 
 """
-Options(;space_order=8,retry_n=0,limit_m=false,buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path="", file_name="shot", sum_padding=false, optimal_checkpointing=false, frequencies=[], dft_subsampling_factor=1, isic=false) = 
-    Options(space_order,retry_n,limit_m,buffer_size,save_data_to_disk,save_wavefield_to_disk,file_path,file_name, sum_padding, optimal_checkpointing, frequencies, dft_subsampling_factor, isic)
+Options(; space_order=8, free_surface=false, limit_m=false, buffer_size=1e3, save_data_to_disk=false, save_wavefield_to_disk=false, file_path="", file_name="shot", sum_padding=false, 
+    optimal_checkpointing=false, num_checkpoints=nothing, checkpoints_maxmem=nothing, frequencies=[], dft_subsampling_factor=1, isic=false) = 
+    Options(space_order, free_surface, limit_m, buffer_size, save_data_to_disk, save_wavefield_to_disk, file_path, file_name, 
+    sum_padding, optimal_checkpointing, num_checkpoints, checkpoints_maxmem, frequencies, dft_subsampling_factor, isic)
 
 
 function subsample(options::Options, srcnum)
