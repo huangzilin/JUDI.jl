@@ -231,9 +231,9 @@ function judiVector(data::Array{SeisIO.SeisCon,1}; segy_depth_key="RecGroupEleva
     nsrc = length(data)
     numTraces = 0
     for j=1:nsrc
-        numTraces += Int((data[j].blocks[1].endbyte - data[j].blocks[1].startbyte)/(240 + data.ns*4))
+        numTraces += Int((data[j].blocks[1].endbyte - data[j].blocks[1].startbyte)/(240 + data[j].ns*4))
     end
-    m = numTraces*data.ns
+    m = numTraces*data[1].ns    # SEGY requires same number of samples for every trace
     n = 1
 
     # extract geometry from data container
@@ -650,6 +650,12 @@ function get_data(x::judiVector)
     end
     return judiVector(rec_geometry, shots)
 end
+
+function isapprox(x::judiVector, y::judiVector; rtol::Real=sqrt(eps()), atol::Real=0)
+    compareGeometry(x.geometry, y.geometry) == 1 || throw(judiVectorException("geometry mismatch"))
+    isapprox(x.data, y.data; rtol=rtol, atol=atol)
+end
+
 
 ###########################################################################################################
 
