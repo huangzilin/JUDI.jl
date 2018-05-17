@@ -55,6 +55,7 @@ dsize = (prod(size(block.data)), 1)
 @test isequal(size(d_block), dsize)
 
 # contructor for in-core data container and given geometry
+rec_geometry = Geometry(block; key="receiver", segy_depth_key="RecGroupElevation")
 d_block = judiVector(rec_geometry, block)
 
 @test isequal(d_block.nsrc, nsrc)
@@ -137,6 +138,7 @@ d_vcat = [d_block; d_block]
 # dot, norm, abs
 @test isapprox(norm(d_block), sqrt(dot(d_block, d_block)))
 @test isapprox(norm(d_cont), sqrt(dot(d_cont, d_cont)))
+@test isapprox(abs.(d_block.data[1]), abs.(d_block).data[1])
 
 # vector space axioms
 u = judiVector(rec_geometry, randn(Float32, ns, nrec))
@@ -153,5 +155,77 @@ b = randn(1)[1]
 @test isapprox(u, u*1; rtol=eps(1f0))
 @test isapprox(a*(u + v), a*u + a*v; rtol=eps(1f0))
 @test isapprox((a + b)*v, a*v + b*v; rtol=eps(1f0))
+
+# subsamling
+d_block_sub = d_block[1]
+@test isequal(d_block_sub.nsrc, 1)
+@test isequal(typeof(d_block_sub.geometry), GeometryIC)
+@test isequal(typeof(d_block_sub.data), Array{Array, 1})
+
+d_block_sub = d_block[1:2]
+@test isequal(d_block_sub.nsrc, 2)
+@test isequal(typeof(d_block_sub.geometry), GeometryIC)
+@test isequal(typeof(d_block_sub.data), Array{Array, 1})
+
+d_cont =  judiVector(container_cell; segy_depth_key="RecGroupElevation")
+d_cont_sub = d_cont[1]
+@test isequal(d_cont_sub.nsrc, 1)
+@test isequal(typeof(d_cont_sub.geometry), GeometryOOC)
+@test isequal(typeof(d_cont_sub.data), Array{SeisIO.SeisCon, 1})
+
+d_cont_sub = d_cont[1:2]
+@test isequal(d_cont_sub.nsrc, 2)
+@test isequal(typeof(d_cont_sub.geometry), GeometryOOC)
+@test isequal(typeof(d_cont_sub.data), Array{SeisIO.SeisCon, 1})
+
+# Conversion to SeisIO.Block
+src_geometry = Geometry(block; key="source", segy_depth_key="SourceSurfaceElevation")
+wavelet = randn(Float32, src_geometry.nt[1])
+q = judiVector(src_geometry, wavelet)
+block_out =  judiVector_to_SeisBlock(d_block, q; source_depth_key="SourceSurfaceElevation", receiver_depth_key="RecGroupElevation")
+
+@test isapprox(block.data, block_out.data)
+@test isapprox(get_header(block, "SourceX"), get_header(block_out, "SourceX"); rtol=1f-6)
+@test isapprox(get_header(block, "GroupX"), get_header(block_out, "GroupX"); rtol=1f-6)
+@test isapprox(get_header(block, "RecGroupElevation"), get_header(block_out, "RecGroupElevation"); rtol=1f-6)
+@test isequal(get_header(block, "ns"), get_header(block_out, "ns"))
+@test isequal(get_header(block, "dt"), get_header(block_out, "dt"))
+
+# Write SEG-Y file
+opt = Options(file_path = pwd())
+write_shot_record(src_geometry, wavelet, d_block.geometry, d_block.data, opt)
+
+block_in = segy_read("shot_100.0_0.0.segy")
+d_load = judiVector(block_in; segy_depth_key="RecGroupElevation")
+@test isapprox(d_block, d_load)
+
+# Time interpolation (inplace)
+dt_orig = 2f0
+dt_new = 1f0
+nt_orig = 501
+nt_new = 1001
+d_resample = deepcopy(d_block)
+time_resample!(d_resample, dt; order=2)
+
+@test isequal(d_resample.geometry.dt[1], dt_new)
+@test isequal(d_resample.geometry.nt[1], nt_new)
+@test isequal(size(d_resample.data[1])[1], nt_new)
+
+time_resample!(d_resample, dt_orig; order=2)
+@test isapprox(d_resample, d_block)
+
+# Time interpolation (w/ deepcopy)
+d_resample = time_resample(d_block, dt_new; order=2)
+
+@test isequal(d_block.geometry.dt[1], dt_orig)
+@test isequal(d_block.geometry.nt[1], nt_orig)
+@test isequal(size(d_block.data[1])[1], nt_orig)
+@test isequal(d_resample.geometry.dt[1], dt_new)
+@test isequal(d_resample.geometry.nt[1], nt_new)
+@test isequal(size(d_resample.data[1])[1], nt_new)
+
+d_recover = time_resample(d_resample, dt_orig; order=2)
+@test isapprox(d_recover, d_block)
+
 
 
