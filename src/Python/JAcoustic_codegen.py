@@ -264,7 +264,7 @@ def adjoint_born(model, rec_coords, rec_data, u=None, op_forward=None, is_residu
         gradient_update = [Eq(gradient, gradient - dt * (u * v.dt2 * m + diff_u_v) / rho)]
 
     # Create operator and run
-    set_log_level('INFO')
+    set_log_level('ERROR')
     expression += adj_src + gradient_update
     subs = model.spacing_map
     subs[u.grid.time_dim.spacing] = dt
@@ -347,7 +347,7 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     rec_term = rec.interpolate(expr=u, offset=model.nbpml)
 
     # Create operator and run
-    set_log_level('DEBUG')
+    set_log_level('ERROR')
     expression += src_term + rec_term
     subs = model.spacing_map
     subs[u.grid.time_dim.spacing] = dt
@@ -409,7 +409,7 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
         gradient_update = [Inc(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v)]
 
     # Create operator and run
-    set_log_level('INFO')
+    set_log_level('ERROR')
     expression += gradient_update + adj_src
     subs = model.spacing_map
     subs[v.grid.time_dim.spacing] = dt
