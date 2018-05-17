@@ -176,7 +176,7 @@ end
 ############################################################
 ## Additional overloaded functions
 
-# Subsample Modeling functino
+# Subsample Modeling function
 function subsample(F::judiModeling, srcnum)
     info = Info(F.info.n, length(srcnum), F.info.nt[srcnum])
     return judiModeling(info, F.model, options=F.options)
