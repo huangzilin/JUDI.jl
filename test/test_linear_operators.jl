@@ -48,6 +48,7 @@ function test_getindex(Op)
     return true
 end
 
+
 ########################################################### judiModeling ###############################################
 
 info = example_info()
@@ -65,6 +66,7 @@ F_adjoint = judiModelingAdjoint(info, model; options=Options())
 # get index
 @test test_getindex(F_forward)
 @test test_getindex(F_adjoint)
+
 
 ############################################################# judiPDE ##################################################
 
@@ -100,5 +102,76 @@ PDEad = PDE_adjoint*Ps'
 @test isequal(PDEad.srcGeometry, rec_geometry)
 @test isequal(PDEad.recGeometry, src_geometry)
 
+
+######################################################### judiPDEfull ##################################################
+
+info = example_info()
+model = example_model()
+rec_geometry = example_rec_geometry()
+src_geometry = example_src_geometry()
+PDE = judiModeling(info, model, src_geometry, rec_geometry; options=Options())
+
+@test isequal(typeof(PDE), judiPDEfull{Float32, Float32})
+@test isequal(PDE.recGeometry, rec_geometry)
+@test isequal(PDE.srcGeometry, src_geometry)
+
+@test test_transpose(PDE)
+@test test_getindex(PDE)
+
+
+######################################################## judiJacobian ##################################################
+
+info = example_info()
+model = example_model()
+rec_geometry = example_rec_geometry()
+src_geometry = example_src_geometry()
+wavelet = randn(Float32, src_geometry.nt[1])
+PDE = judiModeling(info, model, src_geometry, rec_geometry; options=Options())
+q = judiVector(src_geometry, wavelet)
+
+J = judiJacobian(PDE, q)
+
+@test isequal(typeof(J), judiJacobian{Float32, Float32})
+@test isequal(J.recGeometry, rec_geometry)
+@test isequal(J.srcGeometry, src_geometry)
+@test isequal(size(J)[2], prod(model.n))
+@test test_transpose(J)
+
+# get index
+J_sub = J[1]
+@test isequal(J_sub.info.nsrc, 1)
+@test isequal(J_sub.model, J.model)
+@test isequal(size(J_sub)[1], Int(size(J)[1]/2))
+
+J_sub = J[1:2]
+@test isequal(J_sub.info.nsrc, 2)
+@test isequal(J_sub.model, J.model)
+@test isequal(size(J_sub), size(J))
+
+
+####################################################### judiProjection #################################################
+
+info = example_info()
+rec_geometry = example_rec_geometry()
+src_geometry = example_src_geometry()
+
+Pr = judiProjection(info, rec_geometry)
+Ps = judiProjection(info, src_geometry)
+
+@test isequal(typeof(Pr), judiProjection{Float32, Float32})
+@test isequal(typeof(Ps), judiProjection{Float32, Float32})
+@test isequal(Pr.geometry, rec_geometry)
+@test isequal(Ps.geometry, src_geometry)
+
+@test test_transpose(Pr)
+@test test_transpose(Ps)
+
+Pr_sub = Pr[1]
+@test isequal(Pr_sub.info.nsrc, 1)
+@test isequal(size(Pr_sub), convert(Tuple{Int64, Int64}, size(Pr) ./ 2))
+
+Pr_sub = Pr[1:2]
+@test isequal(Pr_sub.info.nsrc, 2)
+@test isequal(size(Pr_sub), size(Pr))
 
 

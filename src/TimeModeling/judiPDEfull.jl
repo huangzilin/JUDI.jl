@@ -71,7 +71,7 @@ end
 # conj(judiPDEfull)
 conj{DDT,RDT}(A::judiPDEfull{DDT,RDT}) =
     judiPDEfull{DDT,RDT}("conj("*A.name*")",A.m,A.n,A.info,A.model,A.srcGeometry,A.recGeometry,A.options,
-        get(A.fop),
+        A.fop,
         A.fop_T
         )
 

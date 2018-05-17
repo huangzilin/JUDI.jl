@@ -79,7 +79,7 @@ end
 # conj(judiJacobian)
 conj{DDT,RDT}(A::judiJacobian{DDT,RDT}) =
     judiJacobian{DDT,RDT}("conj("*A.name*")",A.m,A.n,A.info,A.model,A.srcGeometry,A.recGeometry,A.source,A.options,
-        get(A.fop),
+        A.fop,
         A.fop_T
         )
 
