@@ -22,8 +22,8 @@ m0 = (1f0 ./ v0).^2
 dm = vec(m - m0)
 
 # Setup info and model structure
-nsrc = 2	# number of sources
-model = Model(n, d, o, m)	
+nsrc = 1	# number of sources
+model = Model(n, d, o, m)
 model0 = Model(n, d, o, m0)
 
 ## Set up receiver geometry
@@ -40,9 +40,9 @@ dtR = 4f0    # receiver sampling interval [ms]
 recGeometry = Geometry(xrec, yrec, zrec; dt=dtR, t=timeR, nsrc=nsrc)
 
 ## Set up source geometry (cell array with source locations for each shot)
-xsrc = convertToCell(linspace(400f0, 800f0, nsrc))
-ysrc = convertToCell(linspace(0f0, 0f0, nsrc))
-zsrc = convertToCell(linspace(20f0, 20f0, nsrc))
+xsrc = 600f0 # convertToCell(linspace(400f0, 800f0, nsrc))
+ysrc = 0f0 # convertToCell(linspace(0f0, 0f0, nsrc))
+zsrc = 20f0 # convertToCell(linspace(20f0, 20f0, nsrc))
 
 # source sampling and number of time steps
 timeS = 1000f0  # ms
@@ -63,7 +63,7 @@ info = Info(prod(n), nsrc, ntComp)
 ######################## WITH DENSITY ############################################
 
 # Write shots as segy files to disk
-opt = Options(save_data_to_disk=false, file_path=pwd(), file_name="observed_shot", optimal_checkpointing=true)
+opt = Options(isic=true) #save_data_to_disk=false, file_path=pwd(), file_name="observed_shot", optimal_checkpointing=true)
 
 # Setup operators
 Pr = judiProjection(info, recGeometry)
@@ -76,12 +76,13 @@ J = judiJacobian(Pr*F0*Ps', q)
 dobs = Pr*F*Ps'*q
 qad = Ps*F'*Pr'*dobs
 
-# Linearized modeling
-J.options.file_name = "linearized_shot"
+# Set frequencies
+q_dist = generate_distribution(q)
+J.options.frequencies = Array{Any}(nsrc)
+J.options.frequencies[1] = select_frequencies(q_dist; fmin=0.003, fmax=0.04, nf=10)
+
 dD = J*dm
 rtm1 = J'*dD
 
-# evaluate FWI objective function 
-f, g = fwi_objective(model0, q, dobs; options=opt)
-
-
+# # evaluate FWI objective function
+# f, g = fwi_objective(model0, q, dobs; options=opt)

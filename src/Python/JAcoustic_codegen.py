@@ -12,7 +12,7 @@ from numpy.random import randint
 from sympy import solve, cos, sin, expand, symbols
 from sympy import Function as fint
 from devito.logger import set_log_level
-from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension
+from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension, Inc
 from devito import first_derivative, left, right
 from PySource import PointSource, Receiver
 from PyModel import Model
@@ -54,13 +54,13 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
     ulaplace, rho = acoustic_laplacian(u, rho)
     H = symbols('H')
     eqn = m / rho * u.dt2 - H + damp * u.dt
-    
+
     # Input source is wavefield
     if isinstance(wavelet, TimeFunction):
         wf_src = TimeFunction(name='wf_src', grid=model.grid, time_order=2, space_order=space_order, save=nt)
         wf_src._data = wavelet._data
         eqn -= wf_src
-    
+
     # Rearrange expression
     stencil = solve(eqn, u.forward, simplify=False, rational=False)[0]
     expression = [Eq(u.forward, stencil.subs({H : ulaplace}))]
@@ -68,7 +68,7 @@ def forward_modeling(model, src_coords, wavelet, rec_coords, save=False, space_o
     # Free surface
     if free_surface is True:
         fs = DefaultDimension(name="fs", default_value=int(space_order/2))
-        expression += [Eq(u.forward.subs({u.indices[-1]: model.nbpml - fs - 1}), 
+        expression += [Eq(u.forward.subs({u.indices[-1]: model.nbpml - fs - 1}),
             -u.forward.subs({u.indices[-1]: model.nbpml + fs + 1}))]
 
     # Source symbol with input wavelet
@@ -136,7 +136,7 @@ def adjoint_modeling(model, src_coords, rec_coords, rec_data, space_order=8, nb=
     # Free surface
     if free_surface is True:
         fs = DefaultDimension(name="fs", default_value=int(space_order/2))
-        expression += [Eq(v.forward.subs({v.indices[-1]: model.nbpml - fs - 1}), 
+        expression += [Eq(v.forward.subs({v.indices[-1]: model.nbpml - fs - 1}),
             -v.forward.subs({v.indices[-1]: model.nbpml + fs + 1}))]
 
     # Adjoint source is injected at receiver locations
@@ -264,7 +264,7 @@ def adjoint_born(model, rec_coords, rec_data, u=None, op_forward=None, is_residu
         gradient_update = [Eq(gradient, gradient - dt * (u * v.dt2 * m + diff_u_v) / rho)]
 
     # Create operator and run
-    set_log_level('ERROR')
+    set_log_level('INFO')
     expression += adj_src + gradient_update
     subs = model.spacing_map
     subs[u.grid.time_dim.spacing] = dt
@@ -312,7 +312,8 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     if dt is None:
         dt = model.critical_dt
     m, damp = model.m, model.damp
-    freq_dim = Dimension(name='freq_dim')
+    nfreq = freq.shape[0]
+    freq_dim = DefaultDimension(name='freq_dim', default_value=nfreq)
     time = model.grid.time_dim
     if factor is None:
         factor = int(1 / (dt*4*np.max(freq)))
@@ -323,7 +324,6 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     print("DFT subsampling factor: ", factor)
 
     # Create wavefields
-    nfreq = freq.shape[0]
     u = TimeFunction(name='u', grid=model.grid, time_order=2, space_order=space_order)
     f = Function(name='f', dimensions=(freq_dim,), shape=(nfreq,))
     f.data[:] = freq[:]
@@ -334,8 +334,8 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     eqn = m * u.dt2 - u.laplace + damp * u.dt
     stencil = solve(eqn, u.forward, simplify=False, rational=False)[0]
     expression = [Eq(u.forward, stencil)]
-    expression += [Eq(ufr, ufr + factor*u*cos(2*np.pi*f*tsave*factor*dt))]
-    expression += [Eq(ufi, ufi - factor*u*sin(2*np.pi*f*tsave*factor*dt))]
+    expression += [Inc(ufr, ufr + factor*u*cos(2*np.pi*f*tsave*factor*dt))]
+    expression += [Inc(ufi, ufi - factor*u*sin(2*np.pi*f*tsave*factor*dt))]
 
     # Source symbol with input wavelet
     src = PointSource(name='src', grid=model.grid, ntime=nt, coordinates=src_coords)
@@ -347,14 +347,14 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     rec_term = rec.interpolate(expr=u, offset=model.nbpml)
 
     # Create operator and run
-    set_log_level('ERROR')
+    set_log_level('DEBUG')
     expression += src_term + rec_term
     subs = model.spacing_map
     subs[u.grid.time_dim.spacing] = dt
-    op = Operator(expression, subs=subs, dse='advanced', dle='advanced',
+    op = Operator(expression, subs=subs, dse='aggressive', dle='advanced',
                   name="Forward%s" % randint(1e5))
     op()
-    
+
     return rec.data, ufr, ufi
 
 
@@ -397,26 +397,24 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     # Gradient update
     if isic is True:
         if len(model.shape) == 2:
-            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2*ntf*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v*model.m -
+            gradient_update = [Inc(gradient, gradient + (2*np.pi*f)**2*ntf*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v*model.m -
                                                        (ufr.dx*cos(2*np.pi*f*tsave*dtf) - ufi.dx*sin(2*np.pi*f*tsave*dtf))*v.dx*ntf -
                                                        (ufr.dy*cos(2*np.pi*f*tsave*dtf) - ufi.dy*sin(2*np.pi*f*tsave*dtf))*v.dy*ntf)]
         else:
-            gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2*ntf*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v*model.m -
+            gradient_update = [Inc(gradient, gradient + (2*np.pi*f)**2*ntf*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v*model.m -
                                                        (ufr.dx*cos(2*np.pi*f*tsave*dtf) - ufi.dx*sin(2*np.pi*f*tsave*dtf))*v.dx*ntf -
-                                                       (ufr.dy*cos(2*np.pi*f*tsave*dtf) - ufi.dy*sin(2*np.pi*f*tsave*dtf))*v.dy*ntf - 
+                                                       (ufr.dy*cos(2*np.pi*f*tsave*dtf) - ufi.dy*sin(2*np.pi*f*tsave*dtf))*v.dy*ntf -
                                                        (ufr.dz*cos(2*np.pi*f*tsave*dtf) - ufi.dz*sin(2*np.pi*f*tsave*dtf))*v.dz*ntf)]
     else:
-        gradient_update = [Eq(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v)]
+        gradient_update = [Inc(gradient, gradient + (2*np.pi*f)**2/nt*(ufr*cos(2*np.pi*f*tsave*dtf) - ufi*sin(2*np.pi*f*tsave*dtf))*v)]
 
     # Create operator and run
-    set_log_level('ERROR')
-    expression += adj_src + gradient_update
+    set_log_level('INFO')
+    expression += gradient_update + adj_src
     subs = model.spacing_map
     subs[v.grid.time_dim.spacing] = dt
-    op = Operator(expression, subs=subs, dse='advanced', dle='advanced',
+    op = Operator(expression, subs=subs, dse='aggressive', dle='advanced',
                   name="Gradient%s" % randint(1e5))
     op()
     clear_cache()
     return gradient.data
-
-
