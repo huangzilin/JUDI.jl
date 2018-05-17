@@ -154,6 +154,9 @@ J_sub = J[1:2]
 info = example_info()
 rec_geometry = example_rec_geometry()
 src_geometry = example_src_geometry()
+wavelet = randn(Float32, src_geometry.nt[1])
+q = judiVector(src_geometry, wavelet)
+
 
 Pr = judiProjection(info, rec_geometry)
 Ps = judiProjection(info, src_geometry)
@@ -174,4 +177,7 @@ Pr_sub = Pr[1:2]
 @test isequal(Pr_sub.info.nsrc, 2)
 @test isequal(size(Pr_sub), size(Pr))
 
+RHS = Ps'*q
+@test isequal(typeof(RHS), judiRHS{Float32})
+@test isequal(RHS.geometry, q.geometry)
 
