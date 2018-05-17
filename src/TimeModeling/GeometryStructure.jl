@@ -312,6 +312,8 @@ function compareGeometry(geometry_A::Geometry, geometry_B::Geometry)
     end
 end
 
+isequal(geometry_A::Geometry, geometry_B::Geometry) = compareGeometry(geometry_A, geometry_B)
+
 function compareGeometry(geometry_A::GeometryOOC, geometry_B::GeometryOOC)
     check = true
     for j=1:length(geometry_A.container)
@@ -325,6 +327,8 @@ function compareGeometry(geometry_A::GeometryOOC, geometry_B::GeometryOOC)
     end
     return check
 end
+
+isequal(geometry_A::GeometryOOC, geometry_B::GeometryOOC) = compareGeometry(geometry_A, geometry_B)
 
 compareGeometry(geometry_A::GeometryOOC, geometry_B::Geometry) = true
 compareGeometry(geometry_A::Geometry, geometry_B::GeometryOOC) = true

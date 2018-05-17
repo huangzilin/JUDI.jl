@@ -3,7 +3,7 @@
 # May 2018
 #
 
-using JUDI.TimeModeling, SeisIO, Base.Test
+using JUDI.TimeModeling, SeisIO, Base.Test, Base.BLAS.axpy!
 
 function example_rec_geometry(; nsrc=2, nrec=120)
     xrec = linspace(50f0, 1150f0, nrec)
@@ -61,7 +61,7 @@ d_block = judiVector(rec_geometry, block)
 @test isequal(d_block.nsrc, nsrc)
 @test isequal(typeof(d_block.data), Array{Array, 1})
 @test isequal(typeof(d_block.geometry), GeometryIC)
-@test compareGeometry(rec_geometry, d_block.geometry)
+@test isequal(rec_geometry, d_block.geometry)
 @test isequal(size(d_block), dsize)
 
 # contructor for out-of-core data container from single container
@@ -79,7 +79,7 @@ d_cont = judiVector(rec_geometry, container)
 @test isequal(d_cont.nsrc, nsrc)
 @test isequal(typeof(d_cont.data), Array{SeisIO.SeisCon, 1})
 @test isequal(typeof(d_cont.geometry), GeometryIC)
-@test compareGeometry(rec_geometry, d_cont.geometry)
+@test isequal(rec_geometry, d_cont.geometry)
 @test isequal(size(d_cont), dsize)
 
 # contructor for out-of-core data container from cell array of containers
@@ -100,7 +100,7 @@ d_cont =  judiVector(rec_geometry, container_cell)
 @test isequal(d_cont.nsrc, nsrc)
 @test isequal(typeof(d_cont.data), Array{SeisIO.SeisCon, 1})
 @test isequal(typeof(d_cont.geometry), GeometryIC)
-@test compareGeometry(rec_geometry, d_cont.geometry)
+@test isequal(rec_geometry, d_cont.geometry)
 @test isequal(size(d_cont), dsize)
 
 
@@ -198,6 +198,7 @@ write_shot_record(src_geometry, wavelet, d_block.geometry, d_block.data, opt)
 block_in = segy_read("shot_100.0_0.0.segy")
 d_load = judiVector(block_in; segy_depth_key="RecGroupElevation")
 @test isapprox(d_block, d_load)
+run(`rm shot_100.0_0.0.segy`)
 
 # Time interpolation (inplace)
 dt_orig = 2f0
@@ -205,7 +206,7 @@ dt_new = 1f0
 nt_orig = 501
 nt_new = 1001
 d_resample = deepcopy(d_block)
-time_resample!(d_resample, dt; order=2)
+time_resample!(d_resample, dt_new; order=2)
 
 @test isequal(d_resample.geometry.dt[1], dt_new)
 @test isequal(d_resample.geometry.nt[1], nt_new)
@@ -227,5 +228,93 @@ d_resample = time_resample(d_block, dt_new; order=2)
 d_recover = time_resample(d_resample, dt_orig; order=2)
 @test isapprox(d_recover, d_block)
 
+# Time interpolation (linear operator)
+I = judiTimeInterpolation(d_block.geometry, dt_orig, dt_new)
+d_resample = I*d_block
 
+@test isequal(d_block.geometry.dt[1], dt_orig)
+@test isequal(d_block.geometry.nt[1], nt_orig)
+@test isequal(size(d_block.data[1])[1], nt_orig)
+@test isequal(d_resample.geometry.dt[1], dt_new)
+@test isequal(d_resample.geometry.nt[1], nt_new)
+@test isequal(size(d_resample.data[1])[1], nt_new)
+
+d_recover = I'*d_resample
+@test isapprox(d_recover, d_block)
+
+# scale
+a = randn(Float32, 1)[1]
+d_scale = deepcopy(d_block)
+
+scale!(d_scale, a)
+@test isapprox(d_scale, a*d_block)
+
+scale!(1/a, d_scale)
+@test isapprox(d_scale, d_block; rtol=eps(1f0))
+
+# broadcast multiplication
+u = judiVector(rec_geometry, randn(Float32, ns, nrec))
+v = judiVector(rec_geometry, randn(Float32, ns, nrec))
+u_scale = deepcopy(u)
+v_scale = deepcopy(v)
+a = randn(1)[1]
+
+broadcast!(.*, u_scale, v_scale, a)
+@test isapprox(u, u_scale)
+@test isapprox(a*v, v_scale)
+
+# broadcast identity
+u = judiVector(rec_geometry, randn(Float32, ns, nrec))
+v = judiVector(rec_geometry, randn(Float32, ns, nrec))
+u_id = deepcopy(u)
+v_id = deepcopy(v)
+broadcast!(identity, u_id, v_id)    # copy v_id into u_id
+
+@test isapprox(v, v_id)
+@test isapprox(v, u_id)
+
+# broadcast scaling + addition
+u = judiVector(rec_geometry, randn(Float32, ns, nrec))
+v = judiVector(rec_geometry, randn(Float32, ns, nrec))
+w = judiVector(rec_geometry, randn(Float32, ns, nrec))
+u_add = deepcopy(u)
+v_add = deepcopy(v)
+w_add = deepcopy(w)
+a = randn(1)[1]
+broadcast!(identity, u_add, a, v_add, w_add)
+
+@test isapprox(w, w_add)
+@test isapprox(a*v, v_add)
+@test isapprox(a*v + w, u_add)
+
+# in-place overwrite
+u = judiVector(rec_geometry, randn(Float32, ns, nrec))
+v = judiVector(rec_geometry, randn(Float32, ns, nrec))
+u_cp = deepcopy(u)
+v_cp = deepcopy(v)
+copy!(v_cp, u_cp)
+
+@test isapprox(u, u_cp)
+@test isapprox(u, v_cp)
+
+# overwrite blas
+u = judiVector(rec_geometry, randn(Float32, ns, nrec))
+v = judiVector(rec_geometry, randn(Float32, ns, nrec))
+u_blas = deepcopy(u)
+v_blas = deepcopy(v)
+a = randn(1)[1]
+axpy!(a, u_blas, v_blas)
+@test isapprox(u_blas, u)
+@test isapprox(v_blas, a*u + v)
+
+# similar
+d_zero = similar(d_block)
+
+@test isequal(d_zero.geometry, d_block.geometry)
+@test isequal(size(d_zero), size(d_block))
+@test iszero(d_zero.data[1])
+
+# retrieve out-of-core data
+d_get = get_data(d_cont)
+@test isapprox(d_block, d_get)
 

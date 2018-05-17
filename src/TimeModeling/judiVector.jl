@@ -452,7 +452,7 @@ end
 function abs{avDT}(a::judiVector{avDT})
     b = deepcopy(a)
     for j=1:a.nsrc
-        b.data[j] = abs(a.data[j])
+        b.data[j] = abs.(a.data[j])
     end
     return b
 end
@@ -631,15 +631,13 @@ function copy!(x::judiVector,y::judiVector)
     x.geometry = deepcopy(y.geometry)
 end
 
-#broadcast!(identity, x::judiVector, y::judiVector) = copy!(x,y)
-
 function axpy!(a::Number,X::judiVector,Y::judiVector)
     for j=1:Y.nsrc
         Y.data[j] = a*X.data[j] + Y.data[j]
     end
 end
 
-similar(x::judiVector, kwargs...) = judiVector(x.geometry, x.data)*0f0
+similar(x::judiVector, dims::Union{AbstractUnitRange, Integer}...) = judiVector(x.geometry, x.data)*0f0
 
 function get_data(x::judiVector)
     shots = Array{Any}(x.nsrc)

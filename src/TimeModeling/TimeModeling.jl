@@ -11,7 +11,7 @@ using PyCall, JOLI, SeisIO, Dierckx, ApproXD
 @pyimport JAcoustic_codegen as ac
 @pyimport numpy as np
 import Base.*, Base./, Base.+, Base.-, Base.ctranspose, Base.transpose, Base.conj, Base.vcat, Base.vec, Base.dot, Base.norm, Base.abs, Base.getindex, Base.similar, Base.copy!
-import Base.LinAlg.scale!, Base.LinAlg.A_mul_B!, Base.LinAlg.Ac_mul_B!, Base.BLAS.axpy!, Base.broadcast!, Base.isapprox
+import Base.LinAlg.scale!, Base.LinAlg.A_mul_B!, Base.LinAlg.Ac_mul_B!, Base.BLAS.axpy!, Base.broadcast!, Base.isapprox, Base.isequal
 
 
 #############################################################################
