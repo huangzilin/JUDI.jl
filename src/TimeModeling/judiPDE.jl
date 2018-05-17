@@ -100,7 +100,7 @@ end
 # conj(judiPDE)
 conj{DDT,RDT}(A::judiPDE{DDT,RDT}) =
     judiPDE{DDT,RDT}("conj("*A.name*")",A.m,A.n,A.info,A.model,A.geometry,A.options,
-    get(A.fop),
+        A.fop,
         A.fop_T
         )
 
@@ -121,7 +121,7 @@ ctranspose{DDT,RDT}(A::judiPDE{DDT,RDT}) =
 # conj(jo)
 conj{DDT,RDT}(A::judiPDEadjoint{DDT,RDT}) =
     judiPDEadjoint{DDT,RDT}("conj("*A.name*")",A.m,A.n,A.info,A.model,A.geometry,A.options,
-        get(A.fop),
+        A.fop,
         A.fop_T
         )
 
