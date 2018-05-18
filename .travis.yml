@@ -6,6 +6,9 @@ os:
 julia:
   - 0.6
   - nightly
+branches:
+    only:
+        - wavefield_support
 notifications:
   email: false
 git:

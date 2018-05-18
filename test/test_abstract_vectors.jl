@@ -27,62 +27,65 @@ end
 
 ########################################################### judiRHS ####################################################
 
-# Constructor
-nsrc = 2
-info = example_info(nsrc=nsrc)
-rec_geometry = example_rec_geometry(nsrc=nsrc)
-data = Array{Array}(nsrc)
-for j=1:nsrc
-    data[j] = randn(Float32, rec_geometry.nt[j], length(rec_geometry.xloc[j]))
+@testset "judiRHS Unit test" begin
+
+    # Constructor
+    nsrc = 2
+    info = example_info(nsrc=nsrc)
+    rec_geometry = example_rec_geometry(nsrc=nsrc)
+    data = Array{Array}(nsrc)
+    for j=1:nsrc
+        data[j] = randn(Float32, rec_geometry.nt[j], length(rec_geometry.xloc[j]))
+    end
+    rhs = judiRHS(info, rec_geometry, data)
+
+    @test isequal(typeof(rhs), judiRHS{Float32})
+    @test isequal(rhs.geometry, rec_geometry)
+
+    # conj, transpose, ctranspose
+    @test isequal(size(rhs), size(conj(rhs)))
+    @test isequal(reverse(size(rhs)), size(transpose(rhs)))
+    @test isequal(reverse(size(rhs)), size(ctranspose(rhs)))
+
+    # +, -
+    info = example_info(nsrc=nsrc)
+    rec_geometry = example_rec_geometry(nsrc=nsrc)
+    src_geometry = example_src_geometry(nsrc=nsrc)
+    data1 = Array{Array}(nsrc)
+    data2 = Array{Array}(nsrc)
+    for j=1:nsrc
+        data1[j] = randn(Float32, rec_geometry.nt[j], length(rec_geometry.xloc[j]))
+        data2[j] = randn(Float32, src_geometry.nt[j], length(src_geometry.xloc[j]))
+    end
+    rhs1 = judiRHS(info, rec_geometry, data1)
+    rhs2 = judiRHS(info, src_geometry, data2)
+
+    rhs_sum = rhs1 + rhs2
+    rhs_sub = rhs1 - rhs2
+
+    @test isequal(size(rhs_sum), size(rhs1))
+    @test isequal(size(rhs_sub), size(rhs1))
+
+    @test isequal(length(rhs_sum.geometry.xloc[1]), length(rhs1.geometry.xloc[1]) + length(rhs2.geometry.xloc[1]))
+    @test isequal(length(rhs_sub.geometry.xloc[1]), length(rhs1.geometry.xloc[1]) + length(rhs2.geometry.xloc[1]))
+
+    @test isequal(size(rhs_sum.data[1])[2], size(rhs1.data[1])[2] + size(rhs2.data[1])[2])
+    @test isequal(size(rhs_sub.data[1])[2], size(rhs1.data[1])[2] + size(rhs2.data[1])[2])
+
+    # get index
+    rhs_sub = rhs[1]
+    @test isequal(rhs_sub.info.nsrc, 1)
+    @test isequal(typeof(rhs_sub.geometry), GeometryIC)
+    @test isequal(typeof(rhs.data), Array{Array, 1})
+    @test isequal(length(rhs_sub), Int(length(rhs)/2))
+
+    rhs_sub = rhs[1:2]
+    @test isequal(rhs_sub.info.nsrc, 2)
+    @test isequal(typeof(rhs_sub.geometry), GeometryIC)
+    @test isequal(typeof(rhs.data), Array{Array, 1})
+    @test isequal(length(rhs_sub), length(rhs))
+
 end
-rhs = judiRHS(info, rec_geometry, data)
-
-@test isequal(typeof(rhs), judiRHS{Float32})
-@test isequal(rhs.geometry, rec_geometry)
-
-# conj, transpose, ctranspose
-@test isequal(size(rhs), size(conj(rhs)))
-@test isequal(reverse(size(rhs)), size(transpose(rhs)))
-@test isequal(reverse(size(rhs)), size(ctranspose(rhs)))
-
-# +, -
-info = example_info(nsrc=nsrc)
-rec_geometry = example_rec_geometry(nsrc=nsrc)
-src_geometry = example_src_geometry(nsrc=nsrc)
-data1 = Array{Array}(nsrc)
-data2 = Array{Array}(nsrc)
-for j=1:nsrc
-    data1[j] = randn(Float32, rec_geometry.nt[j], length(rec_geometry.xloc[j]))
-    data2[j] = randn(Float32, src_geometry.nt[j], length(src_geometry.xloc[j]))
-end
-rhs1 = judiRHS(info, rec_geometry, data1)
-rhs2 = judiRHS(info, src_geometry, data2)
-
-rhs_sum = rhs1 + rhs2
-rhs_sub = rhs1 - rhs2
-
-@test isequal(size(rhs_sum), size(rhs1))
-@test isequal(size(rhs_sub), size(rhs1))
-
-@test isequal(length(rhs_sum.geometry.xloc[1]), length(rhs1.geometry.xloc[1]) + length(rhs2.geometry.xloc[1]))
-@test isequal(length(rhs_sub.geometry.xloc[1]), length(rhs1.geometry.xloc[1]) + length(rhs2.geometry.xloc[1]))
-
-@test isequal(size(rhs_sum.data[1])[2], size(rhs1.data[1])[2] + size(rhs2.data[1])[2])
-@test isequal(size(rhs_sub.data[1])[2], size(rhs1.data[1])[2] + size(rhs2.data[1])[2])
-
-# get index
-rhs_sub = rhs[1]
-@test isequal(rhs_sub.info.nsrc, 1)
-@test isequal(typeof(rhs_sub.geometry), GeometryIC)
-@test isequal(typeof(rhs.data), Array{Array, 1})
-@test isequal(length(rhs_sub), Int(length(rhs)/2))
-
-rhs_sub = rhs[1:2]
-@test isequal(rhs_sub.info.nsrc, 2)
-@test isequal(typeof(rhs_sub.geometry), GeometryIC)
-@test isequal(typeof(rhs.data), Array{Array, 1})
-@test isequal(length(rhs_sub), length(rhs))
-
 
 ######################################################### judiWavefield ################################################
 
