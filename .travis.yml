@@ -14,10 +14,10 @@ notifications:
 git:
   depth: 99999999
 
-before_install:
-    - julia -e 'Pkg.clone("git@github.com:slimgroup/SeisIO.jl.git")'
-    - julia -e 'Pkg.clone("git@github.com:floswald/ApproXD.jl.git")'
-    - julia -e 'Pkg.clone("git@github.com:slimgroup/JOLI.jl.git")'
+#before_install:
+#    - julia -e 'Pkg.clone("git@github.com:slimgroup/SeisIO.jl.git")'
+#    - julia -e 'Pkg.clone("git@github.com:floswald/ApproXD.jl.git")'
+#    - julia -e 'Pkg.clone("git@github.com:slimgroup/JOLI.jl.git")'
 
 ## uncomment and modify the following lines to manually install system packages
 #addons:
