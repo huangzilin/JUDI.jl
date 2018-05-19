@@ -6,7 +6,7 @@ os:
 addons:
     apt:
         packages:
-            - gfortran-8
+            - gfortran-6
 julia:
   - 0.6
   - nightly
