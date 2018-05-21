@@ -51,7 +51,7 @@ function time_modeling(model_full::Model, srcGeometry, srcData, recGeometry, rec
 
     # Extend gradient back to original model size
     if op=='J' && mode==-1 && options.limit_m==true
-        argout = extend_gradient(model_full, model, reshape(argout, model.n))
+        argout = vec(extend_gradient(model_full, model, reshape(argout, model.n)))
     end
 
     return argout
