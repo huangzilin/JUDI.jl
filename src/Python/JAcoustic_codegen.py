@@ -316,6 +316,7 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     time = model.grid.time_dim
     if factor is None:
         factor = int(1 / (dt*4*np.max(freq)))
+        tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
     if factor==1:
         tsave = time
     else:
@@ -370,6 +371,7 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     time = model.grid.time_dim
     if factor is None:
         factor = int(1 / (dt*4*np.max(freq)))
+        tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
     if factor==1:
         tsave = time
     else:
