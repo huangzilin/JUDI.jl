@@ -19,14 +19,16 @@ git:
   depth: 99999999
 
 before_install:
-    - which python
+    - pip install --user git+https://github.com/opesci/devito.git@v3.2.0
     - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl.git"); Pkg.build("SeisIO")'
     - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git"); Pkg.build("ApproXD")'
     - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git"); Pkg.build("JOLI")'
 
 ## uncomment the following lines to override the default test script
 script:
-    - julia -e 'Pkg.clone(pwd()); Pkg.build("JUDI"); Pkg.resolve(); Pkg.test("JUDI"; coverage=true)'
+    - julia -e 'Pkg.clone(pwd()); Pkg.build("JUDI"); Pkg.resolve()'
+    - julia -e 'ENV["PYTHON"]=run(`which python`); Pkg.build("PyCall")'
+    - julia -e 'Pkg.test("JUDI"; coverage=true)'
 
 after_success:
   # push coverage results to Coveralls
