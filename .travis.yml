@@ -1,15 +1,13 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
-language: julia
+language: python
 os:
   - linux
-  - osx
 addons:
     apt:
         packages:
             - gfortran
-julia:
-  - 0.6
-  - nightly
+python:
+  - 3.6
 branches:
     only:
         - wavefield_support
@@ -19,21 +17,16 @@ git:
   depth: 99999999
 
 before_install:
-    - apt-get update
-    - apt-get install python3
-    - pip3 install --user git+https://github.com/opesci/devito.git@v3.2.0
-    - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl.git"); Pkg.build("SeisIO")'
-    - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git"); Pkg.build("ApproXD")'
-    - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git"); Pkg.build("JOLI")'
-    - julia -e 'Pkg.clone(pwd()); Pkg.build("JUDI"); Pkg.resolve()'
-    - julia -e 'ENV["PYTHON"]=run(`which python3`); Pkg.build("PyCall")'
-
+  - pip install --user git+https://github.com/opesci/devito.git@v3.2.0
+  - pip install --user -r docker/devito_requirements.txt
+  - sudo apt-get install -y gfortran
+  - wget "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
+  - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz
+  - ln -s /julia/julia-d386e40c17/bin/julia /usr/local/bin/julia
+   
 ## uncomment the following lines to override the default test script
 script:
-    - julia -e 'Pkg.test("JUDI"; coverage=true)'
+    - julia -e 'using PyCall'
 
 after_success:
-  # push coverage results to Coveralls
-  - julia -e 'cd(Pkg.dir("JUDI")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
-  # push coverage results to Codecov
-  - julia -e 'cd(Pkg.dir("JUDI")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+
