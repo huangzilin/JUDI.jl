@@ -17,11 +17,12 @@ git:
   depth: 99999999
 
 before_install:
-  - pip install --user git+https://github.com/opesci/devito.git@v3.2.0
-  - pip install --user -r docker/devito_requirements.txt
+  - pip install git+https://github.com/opesci/devito.git@v3.2.0
+  - pip install -r docker/devito_requirements.txt
+  - sudo apt-get update
   - sudo apt-get install -y gfortran
   - wget "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
-  - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz
+  - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz -C /julia/
   - ln -s /julia/julia-d386e40c17/bin/julia /usr/local/bin/julia
    
 ## uncomment the following lines to override the default test script
