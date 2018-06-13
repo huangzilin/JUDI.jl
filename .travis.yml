@@ -19,7 +19,7 @@ git:
   depth: 99999999
 
 before_install:
-	- which python
+    - which python
     - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl.git"); Pkg.build("SeisIO")'
     - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git"); Pkg.build("ApproXD")'
     - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git"); Pkg.build("JOLI")'
