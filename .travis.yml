@@ -1,5 +1,5 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
-language: python
+language: julia
 os:
   - linux
 addons:
@@ -7,7 +7,7 @@ addons:
         packages:
             - gfortran
 python:
-  - 3.6
+  - 0.6
 branches:
     only:
         - wavefield_support
@@ -17,25 +17,16 @@ git:
   depth: 99999999
 env:
   global:
-    - DEVITO_ARCH="gcc"
-    - DEVITO_OPENMP="0"
 before_install:
-  - mv /home/travis/slimgroup/JUDI.jl /home/travis/slimgroup/JUDI
-  - pip install git+https://github.com/opesci/devito.git@v3.2.0
-  - pip install -r docker/devito_requirements.txt
   - sudo apt-get update
   - sudo apt-get install -y gfortran
-  - wget "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
-  - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz
-  - sudo ln -s /home/travis/slimgroup/JUDI/julia-d386e40c17/bin/julia /usr/local/bin/julia
-  - sudo ln -s /home/travis/slimgroup/JUDI /home/travis/.julia/v0.6/
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
    
 ## uncomment the following lines to override the default test script
 script:
-    - julia -e '/home/travis/.julia/v0.6/JUDI.jl/examples/scripts/modeling_basic_2D.jl'
+    - julia -e 'using JUDI.TimeModeling'
 
 after_success:
 
