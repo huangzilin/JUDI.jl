@@ -1,5 +1,5 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
-language: julia
+language: default
 os:
   - linux
 addons:
@@ -7,7 +7,7 @@ addons:
         packages:
             - gfortran
 python:
-  - 0.6
+  - 3.6
 branches:
     only:
         - wavefield_support
@@ -17,12 +17,17 @@ git:
   depth: 99999999
 env:
   global:
+    - DEVITO_ARCH="gcc"
+    - DEVITO_OPENMP="0"
+
 before_install:
-  - ls -la /home/travis/julia
-  - ls -la /home
-  - ln -s /home/travis/slimgroup/JUDI.jl /home/travis/.julia/v0.6/JUDI
   - sudo apt-get update
   - sudo apt-get install -y gfortran
+  - wget "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
+  - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz
+  - sudo ln -s /home/travis/slimgroup/JUDI/julia-d386e40c17/bin/julia /usr/local/bin/julia
+  - sudo ln -s /home/travis/slimgroup/JUDI.jl /home/travis/.julia/v0.6/JUDI
+  - ls -la /home/travis/.julia/v0.6/JUDI
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
