@@ -23,8 +23,13 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y gfortran
   - pip install --upgrade pip
-  - pip install git+https://github.com/opesci/devito.git@v3.2-beta
-  - pip install -r Docker/devito_requirements.txt
+  - pip install git+https://github.com/opesci/devito.git@v3.2.0
+  - pip install -r docker/devito_requirements.txt
+  - CURL_USER_AGENT="Travis-CI $(curl --version | head -n 1)"
+  - mkdir -p ~/julia
+  - curl -A "$CURL_USER_AGENT" -s -L --retry 7 'https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6-latest-linux-x86_64.tar.gz' | tar -C ~/julia -x -z --strip-components=1 -f -
+  - export PATH="${PATH}:${HOME}/julia/bin"
+  - julia --version
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
