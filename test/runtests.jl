@@ -1,5 +1,5 @@
 
-using PyPlot
+using PyCall
 using Base.Test
 
 @testset "JUDI Unit tests" begin
