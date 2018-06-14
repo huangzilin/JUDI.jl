@@ -31,13 +31,12 @@ before_install:
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
-
 install:
-  - julia -e 'ENV["PYTHON"]="/home/travis/virtualenv/python3.6.3/bin/python"; Pkg.clone("https://github.com/slimgroup/JUDI.jl.git", "wavefield_support")'
-   
-## uncomment the following lines to override the default test script
+  - export PYTHON=$(which python)
+  - julia -e 'Pkg.clone("https://github.com/slimgroup/JUDI.jl.git")'
+  - julia -e 'Pkg.checkout("JUDI", "wavefield_support")'
 script:
   - julia -e 'test/runtests.jl'
-
+  - julia --check-bounds=yes --color=yes -e "Pkg.test(JUDI, coverage=true)"
 after_success:
-
+  - julia -e 'cd(Pkg.dir("JUDI")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())' 
