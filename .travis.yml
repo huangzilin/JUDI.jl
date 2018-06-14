@@ -1,5 +1,5 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
-language: julia
+language: python
 os:
   - linux
 addons:
@@ -7,7 +7,7 @@ addons:
         packages:
             - gfortran
 python:
-  - 0.6
+  - 3.6
 branches:
     only:
         - wavefield_support
@@ -17,9 +17,14 @@ git:
   depth: 99999999
 env:
   global:
+    - DEVITO_ARCH="gcc"
+    - DEVITO_OMP="0"
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y gfortran
+  - pip install --upgrade pip
+  - pip install git+https://github.com/opesci/devito.git@v3.2-beta
+  - pip install -r Docker/devito_requirements.txt
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
