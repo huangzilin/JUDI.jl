@@ -18,8 +18,8 @@ git:
 env:
   global:
 before_install:
-  - ls -la /home/julia
-  - ls -la /home/travis
+  - ls -la /home/travis/julia
+  - ls -la /home
   - ln -s /home/travis/slimgroup/JUDI.jl /home/travis/.julia/v0.6/JUDI
   - sudo apt-get update
   - sudo apt-get install -y gfortran
