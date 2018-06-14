@@ -25,9 +25,10 @@ before_install:
   - sudo apt-get install -y gfortran
   - wget "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
   - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz
-  - sudo ln -s /home/travis/slimgroup/JUDI.jl/julia-d386e40c17/bin/julia /usr/local/bin/julia
+  - sudo ln -s /home/travis/build/slimgroup/JUDI.jl/julia-d386e40c17/bin/julia /usr/local/bin/julia
   - julia --version
   - ls -la /home/travis
+  - ls -la /home/travis/build/
   - ls -la /home/travis/.julia/
   - ls -la /home/travis/.julia/v0.6/
   - sudo ln -s /home/travis/slimgroup/JUDI.jl /home/travis/.julia/v0.6/JUDI
