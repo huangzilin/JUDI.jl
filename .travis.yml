@@ -1,5 +1,5 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
-language: default
+language: julia
 os:
   - linux
 addons:
@@ -7,7 +7,7 @@ addons:
         packages:
             - gfortran
 python:
-  - 3.6
+  - 0.6
 branches:
     only:
         - wavefield_support
@@ -17,25 +17,12 @@ git:
   depth: 99999999
 env:
   global:
-    - DEVITO_ARCH="gcc"
-    - DEVITO_OPENMP="0"
-
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y gfortran
-  - wget "https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz"
-  - tar -xvzf julia-0.6.2-linux-x86_64.tar.gz
-  - sudo ln -s /home/travis/build/slimgroup/JUDI.jl/julia-d386e40c17/bin/julia /usr/local/bin/julia
-  - julia --version
-  - ls -la /home/travis
-  - ls -la /home/travis/build/
-  - ls -la /home/travis/.julia/
-  - ls -la /home/travis/.julia/v0.6/
-  - sudo ln -s /home/travis/slimgroup/JUDI.jl /home/travis/.julia/v0.6/JUDI
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
-  - julia -e 'Pkg.resolve()'
    
 ## uncomment the following lines to override the default test script
 script:
