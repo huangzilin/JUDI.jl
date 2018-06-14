@@ -1,7 +1,4 @@
-
-using PyCall
 using Base.Test
-
 @testset "JUDI Unit tests" begin
     include("test_abstract_vectors.jl")
     include("test_geometry.jl")
