@@ -10,7 +10,6 @@ python:
   - 3.6
 branches:
     only:
-        - wavefield_support
 notifications:
   email: false
 git:
@@ -32,6 +31,9 @@ before_install:
   - julia -e 'Pkg.clone("https://github.com/slimgroup/SeisIO.jl")'
   - julia -e 'Pkg.clone("https://github.com/slimgroup/JOLI.jl.git")'
   - julia -e 'Pkg.clone("https://github.com/floswald/ApproXD.jl.git")'
+
+install:
+  - julia -e 'ENV["PYTHON"]="/home/travis/virtualenv/python3.6.3/bin/python"; Pkg.clone("https://github.com/slimgroup/JUDI.jl.git", "wavefield_support")'
    
 ## uncomment the following lines to override the default test script
 script:
