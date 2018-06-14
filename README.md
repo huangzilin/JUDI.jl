@@ -1,6 +1,6 @@
-[!Build Status](https://travis-ci.org/slimgroup/JUDI.jl.svg?branch=master)](https://travis-ci.org/slimgroup/JUDI.jl)
-
 # The Julia Devito Inversion framework (JUDI)
+
+[!Build Status](https://travis-ci.org/slimgroup/JUDI.jl.svg?branch=wavefield_support)](https://travis-ci.org/slimgroup/JUDI.jl)
 
 ## Overview
 
