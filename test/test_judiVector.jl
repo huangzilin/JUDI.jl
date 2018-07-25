@@ -194,13 +194,13 @@ ns = 251
     @test isequal(get_header(block, "dt"), get_header(block_out, "dt"))
 
     # Write SEG-Y file
-    opt = Options(file_path = pwd())
-    write_shot_record(src_geometry, wavelet, d_block.geometry, d_block.data, opt)
+    #opt = Options(file_path = pwd())
+    #write_shot_record(src_geometry, wavelet, d_block.geometry, d_block.data, opt)
 
-    block_in = segy_read("shot_100.0_0.0.segy")
-    d_load = judiVector(block_in; segy_depth_key="RecGroupElevation")
-    @test isapprox(d_block, d_load)
-    run(`rm shot_100.0_0.0.segy`)
+    #block_in = segy_read("shot_100.0_0.0.segy")
+    #d_load = judiVector(block_in; segy_depth_key="RecGroupElevation")
+    #@test isapprox(d_block, d_load)
+    #run(`rm shot_100.0_0.0.segy`)
 
     # Time interpolation (inplace)
     dt_orig = 2f0
