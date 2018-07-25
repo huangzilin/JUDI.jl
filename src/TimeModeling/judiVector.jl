@@ -637,7 +637,7 @@ function axpy!(a::Number,X::judiVector,Y::judiVector)
     end
 end
 
-similar(x::judiVector, dims::Union{AbstractUnitRange, Integer}...) = judiVector(x.geometry, x.data)*0f0
+similar(x::judiVector, element_type::DataType, dims::Union{AbstractUnitRange, Integer}...) = judiVector(x.geometry, x.data)*0f0
 
 function get_data(x::judiVector)
     shots = Array{Any}(x.nsrc)
