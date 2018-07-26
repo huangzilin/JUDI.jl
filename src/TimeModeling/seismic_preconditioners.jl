@@ -10,7 +10,7 @@ export model_topmute, judiTopmute, find_water_bottom, depth_scaling, judiDepthSc
 ############################################ Data space preconditioners ################################################
 
 
-function marineTopmute2D(Dobs::judiVector, muteStart::Integer; mute=Array{Any}(3))
+function marineTopmute2D(Dobs::judiVector, muteStart::Integer; mute=Array{Any}(3), flipmask=false)
     # Data topmute for end-on spread marine streamer data
     Din = deepcopy(Dobs)
 
@@ -58,8 +58,7 @@ function marineTopmute2D(Dobs::judiVector, muteStart::Integer; mute=Array{Any}(3
         for k=1:length(zax)
             mask[zax[k],xax[k]:end] = 0f0
         end
-
-        mask = flipdim(mask, 2)
+        flipmask == true && (mask = flipdim(mask, 2))
         Din.data[j] = Din.data[j].*mask
     end
     return Din

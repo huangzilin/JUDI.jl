@@ -310,7 +310,7 @@ ns = 251
     @test isapprox(v_blas, a*u + v)
 
     # similar
-    d_zero = similar(d_block)
+    d_zero = similar(d_block, Float32)
 
     @test isequal(d_zero.geometry, d_block.geometry)
     @test isequal(size(d_zero), size(d_block))
