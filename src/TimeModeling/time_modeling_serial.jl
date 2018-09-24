@@ -47,7 +47,7 @@ function time_modeling(model_full::Model, srcGeometry, srcData, recGeometry, rec
     end
 
     # Devito interface
-    argout = devito_interface(modelPy, srcGeometry, srcData, recGeometry, recData, dm, options)
+    argout = devito_interface(modelPy, model.o, srcGeometry, srcData, recGeometry, recData, dm, options)
 
     # Extend gradient back to original model size
     if op=='J' && mode==-1 && options.limit_m==true
@@ -63,17 +63,8 @@ time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData, perturba
 
 ######################################################################################################################################################
 
-function get_origin(modelPy:: PyCall.PyObject) 
-    orig = modelPy[:origin]
-    if length(orig) == 2
-        o = (orig[1][:data], orig[2][:data])
-    else
-        o = (orig[1][:data], orig[2][:data], orig[3][:data])
-    end
-end
-
 # d_obs = Pr*F*Ps'*q
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcData::Array, recGeometry::Geometry, recData::Void, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Geometry, srcData::Array, recGeometry::Geometry, recData::Void, dm::Void, options::Options)
     
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -82,7 +73,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     ntRec = Int(trunc(recGeometry.t[1]/dtComp + 1))
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     src_coords = setup_grid(srcGeometry, modelPy[:shape], origin)
     rec_coords = setup_grid(recGeometry, modelPy[:shape], origin)
 
@@ -102,7 +92,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 end
 
 # q_ad = Ps*F'*Pr'*d_obs
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcData::Void, recGeometry::Geometry, recData::Array, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Geometry, srcData::Void, recGeometry::Geometry, recData::Array, dm::Void, options::Options)
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -111,7 +101,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     ntSrc = Int(trunc(srcGeometry.t[1]/dtComp + 1))
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     src_coords = setup_grid(srcGeometry, modelPy[:shape], origin)
     rec_coords = setup_grid(recGeometry, modelPy[:shape], origin)
 
@@ -126,7 +115,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 end
 
 # u = F*Ps'*q
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcData::Array, recGeometry::Void, recData::Void, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Geometry, srcData::Array, recGeometry::Void, recData::Void, dm::Void, options::Options)
     
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -134,7 +123,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     ntComp = size(qIn,1)
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     src_coords = setup_grid(srcGeometry, modelPy[:shape], origin)
 
     # Devito call
@@ -147,7 +135,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 end
 
 # v = F'*Pr'*d_obs
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::Void, recGeometry::Geometry, recData::Array, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Void, srcData::Void, recGeometry::Geometry, recData::Array, dm::Void, options::Options)
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -155,7 +143,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
     ntComp = size(dIn,1)
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     rec_coords = setup_grid(recGeometry, modelPy[:shape], origin)
 
     # Devito call
@@ -168,7 +155,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
 end
 
 # d_obs = Pr*F*u
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::Array, recGeometry::Geometry, recData::Void, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Void, srcData::Array, recGeometry::Geometry, recData::Void, dm::Void, options::Options)
   
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -176,7 +163,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
     ntRec = Int(trunc(recGeometry.t[1]/dtComp + 1))
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     rec_coords = setup_grid(recGeometry, modelPy[:shape], origin)
 
     # Devito call
@@ -194,7 +180,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
 end
 
 # q_ad = Ps*F'*v
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcData::Void, recGeometry::Void, recData::Array, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Geometry, srcData::Void, recGeometry::Void, recData::Array, dm::Void, options::Options)
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -202,7 +188,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     ntSrc = Int(trunc(srcGeometry.t[1]/dtComp + 1))
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     src_coords = setup_grid(srcGeometry, modelPy[:shape], origin)
 
     # Devito call
@@ -216,7 +201,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 end
 
 # u_out = F*u_in
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::Array, recGeometry::Void, recData::Void, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Void, srcData::Array, recGeometry::Void, recData::Void, dm::Void, options::Options)
   
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -232,7 +217,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
 end
 
 # v_out = F'*v_in
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::Void, recGeometry::Void, recData::Array, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Void, srcData::Void, recGeometry::Void, recData::Array, dm::Void, options::Options)
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -248,7 +233,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Void, srcData::
 end
 
 # d_lin = J*dm
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcData::Array, recGeometry::Geometry, recData::Void, dm::Array, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Geometry, srcData::Array, recGeometry::Geometry, recData::Void, dm::Array, options::Options)
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -258,7 +243,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     ntRec = Int(trunc(tmaxRec/dtComp + 1))
 
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     src_coords = setup_grid(srcGeometry, modelPy[:shape], origin)
     rec_coords = setup_grid(recGeometry, modelPy[:shape], origin)
     
@@ -278,7 +262,7 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
 end
 
 # dm = J'*d_lin
-function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcData::Array, recGeometry::Geometry, recData::Array, dm::Void, options::Options)
+function devito_interface(modelPy::PyCall.PyObject, origin, srcGeometry::Geometry, srcData::Array, recGeometry::Geometry, recData::Array, dm::Void, options::Options)
 
     # Interpolate input data to computational grid
     dtComp = modelPy[:critical_dt]
@@ -286,7 +270,6 @@ function devito_interface(modelPy::PyCall.PyObject, srcGeometry::Geometry, srcDa
     dIn = time_resample(recData[1],recGeometry,dtComp)[1]
     
     # Set up coordinates with devito dimensions
-    origin = get_origin(modelPy)
     src_coords = setup_grid(srcGeometry, modelPy[:shape], origin)
     rec_coords = setup_grid(recGeometry, modelPy[:shape], origin)
 
