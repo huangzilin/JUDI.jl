@@ -32,8 +32,6 @@ include("judiVector.jl")    # Julia data container
 # PDE solvers
 include("time_modeling_serial.jl")  # forward/adjoint linear/nonlinear modeling
 include("time_modeling_parallel.jl")    # parallelization for modeling
-include("fwi_objective_serial.jl")  # FWI objective function value and gradient
-include("fwi_objective_parallel.jl")    # parallelization for FWI gradient
 
 #############################################################################
 # Linear operators
@@ -42,6 +40,11 @@ include("judiProjection.jl")    # source/receiver projection operator
 include("judiPDEfull.jl")   # modeling operator with source and receiver projection: P*F*P'
 include("judiPDE.jl")   # modeling operator with lhs projection only: P*F
 include("judiJacobian.jl")  # linearized modeling operator J
+
+#############################################################################
+# FWI objective
+include("fwi_objective_serial.jl")  # FWI objective function value and gradient
+include("fwi_objective_parallel.jl")    # parallelization for FWI gradient
 
 #############################################################################
 # Preconditioners and optimization

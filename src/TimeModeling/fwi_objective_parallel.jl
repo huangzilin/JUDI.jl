@@ -38,4 +38,26 @@ function fwi_objective(model::Model, source::judiVector, dObs::judiVector; optio
     return gradient[1], gradient[2:end]
 end
 
+function fwi_objective(model::Model, source::judiVector, F::judiPDEfull; options=Options(), frequencies=[])
+# fwi_objective function for multiple sources. The function distributes the sources and the input data amongst the available workers.
+
+    # Process shots from source channel asynchronously
+    fwi_objective = retry(TimeModeling.fwi_objective)
+    results = Array{Any}(F.info.nsrc)
+    @sync begin
+        for j=1:F.info.nsrc
+            results[j] = @spawn fwi_objective(model, source[j], F[j], j; options=options, frequencies=frequencies)   
+        end
+    end
+
+    # Collect and reduce gradients
+    gradient = zeros(Float32,prod(model.n)+1)
+    for j=1:F.info.nsrc
+        gradient += fetch(results[j]); results[j] = []
+    end
+
+    # first value corresponds to function value, the rest to the gradient
+    return gradient[1], gradient[2:end]
+end
+
 
