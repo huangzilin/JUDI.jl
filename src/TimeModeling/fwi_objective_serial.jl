@@ -1,7 +1,7 @@
 
 export fwi_objective
 
-function fwi_objective(model_full::Model, source::judiVector, dObs::judiVector, srcnum::Integer; options=Options(), frequencies=[])
+function fwi_objective(model_full::Model, source::judiVector, dObs::judiVector, srcnum::Integer; options=Options())
 # Setup time-domain linear or nonlinear foward and adjoint modeling and interface to OPESCI/devito
 
     # Load full geometry for out-of-core geometry containers
@@ -63,7 +63,7 @@ function fwi_objective(model_full::Model, source::judiVector, dObs::judiVector, 
     if options.limit_m==true && length(model_full.n) == 3
         argout2 = extend_gradient(model_full,model,argout2)
     end
-    return [argout1; vec(argout2)]
+    return [convert(Float32, argout1); vec(argout2)]
 end
 
 
@@ -71,14 +71,12 @@ end
 # Hacked version for GCP-demo: generate observed data on the fly
 #
 
-function fwi_objective(model_full::Model, source::judiVector, F::judiPDEfull, srcnum::Integer; options=Options(), frequencies=[])
+function fwi_objective(model_full::Model, source::judiVector, F::judiPDEfull, srcnum::Integer; options=Options())
 # Setup time-domain linear or nonlinear foward and adjoint modeling and interface to OPESCI/devito
 
     # Forward model data
     typeof(source.geometry) == GeometryOOC && (source.geometry = Geometry(source.geometry))
-    println("Generate observed data")
     dObs = F*source
-    println("Done")
 
     # Load full geometry for out-of-core geometry containers
     typeof(dObs.geometry) == GeometryOOC && (dObs.geometry = Geometry(dObs.geometry))
@@ -138,7 +136,7 @@ function fwi_objective(model_full::Model, source::judiVector, F::judiPDEfull, sr
     if options.limit_m==true && length(model_full.n) == 3
         argout2 = extend_gradient(model_full,model,argout2)
     end
-    return [argout1; vec(argout2)]
+    return [convert(Float32, argout1); vec(argout2)]
 end
 
 
