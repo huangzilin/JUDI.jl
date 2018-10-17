@@ -321,7 +321,7 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
         tsave = time
     else:
         tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
-    print("DFT subsampling factor: ", factor)
+    #print("DFT subsampling factor: ", factor)
 
     # Create wavefields
     u = TimeFunction(name='u', grid=model.grid, time_order=2, space_order=space_order)
@@ -376,7 +376,7 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
         tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
     dtf = factor * dt
     ntf = factor / nt
-    print("DFT subsampling factor: ", factor)
+    #print("DFT subsampling factor: ", factor)
 
     # Create the forward and adjoint wavefield
     v = TimeFunction(name='v', grid=model.grid, time_order=2, space_order=space_order)

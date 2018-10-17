@@ -14,6 +14,7 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
     results = Array{Any}(numSources)
         
     # Process shots from source channel asynchronously
+    #tic()
     @sync begin
         for j=1:numSources
             
@@ -29,7 +30,7 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
                 recGeometryLocal = subsample(recGeometry,j)
             end
             opt_local = subsample(options,j)
-            numSources > 1 && (opt_local.save_wavefield_to_disk=true)    # don't collect wavefields on master
+            #numSources > 1 && (opt_local.save_wavefield_to_disk=true)    # don't collect wavefields on master
 
             # Parallelization
             if op=='F' && mode==1
@@ -53,7 +54,9 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
             end
         end
     end
-
+    #toc()
+    
+    #tic()
     if op=='F' || (op=='J' && mode==1)
         argout1 = results[1]
         for j=2:numSources
@@ -67,6 +70,7 @@ function time_modeling(model::Model, srcGeometry, srcData, recGeometry, recData,
     else
         error("operation no defined")
     end
+    #toc()
     return argout1
 end
 
