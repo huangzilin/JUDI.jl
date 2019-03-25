@@ -12,7 +12,7 @@ from numpy.random import randint
 from sympy import solve, cos, sin, expand, symbols
 from sympy import Function as fint
 from devito.logger import set_log_level
-from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension
+from devito import Eq, Inc, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension
 from devito import first_derivative, left, right
 from PySource import PointSource, Receiver
 from PyModel import Model
