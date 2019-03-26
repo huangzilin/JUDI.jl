@@ -12,7 +12,7 @@ from numpy.random import randint
 from sympy import solve, cos, sin, expand, symbols
 from sympy import Function as fint
 from devito.logger import set_log_level
-from devito import Eq, Inc, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension
+from devito import Eq, Function, TimeFunction, Dimension, Operator, clear_cache, ConditionalDimension, DefaultDimension, Inc
 from devito import first_derivative, left, right
 from PySource import PointSource, Receiver
 from PyModel import Model
@@ -312,19 +312,18 @@ def forward_freq_modeling(model, src_coords, wavelet, rec_coords, freq, space_or
     if dt is None:
         dt = model.critical_dt
     m, damp = model.m, model.damp
-    freq_dim = Dimension(name='freq_dim')
+    nfreq = freq.shape[0]
+    freq_dim = DefaultDimension(name='freq_dim', default_value=nfreq)
     time = model.grid.time_dim
     if factor is None:
         factor = int(1 / (dt*4*np.max(freq)))
-        tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
     if factor==1:
         tsave = time
     else:
         tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
-    print("DFT subsampling factor: ", factor)
+    #print("DFT subsampling factor: ", factor)
 
     # Create wavefields
-    nfreq = freq.shape[0]
     u = TimeFunction(name='u', grid=model.grid, time_order=2, space_order=space_order)
     f = Function(name='f', dimensions=(freq_dim,), shape=(nfreq,))
     f.data[:] = freq[:]
@@ -371,14 +370,13 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
     time = model.grid.time_dim
     if factor is None:
         factor = int(1 / (dt*4*np.max(freq)))
-        tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
     if factor==1:
         tsave = time
     else:
         tsave = ConditionalDimension(name='tsave', parent=model.grid.time_dim, factor=factor)
     dtf = factor * dt
     ntf = factor / nt
-    print("DFT subsampling factor: ", factor)
+    #print("DFT subsampling factor: ", factor)
 
     # Create the forward and adjoint wavefield
     v = TimeFunction(name='v', grid=model.grid, time_order=2, space_order=space_order)
@@ -412,7 +410,7 @@ def adjoint_freq_born(model, rec_coords, rec_data, freq, ufr, ufi, space_order=8
 
     # Create operator and run
     set_log_level('ERROR')
-    expression += adj_src + gradient_update
+    expression += gradient_update + adj_src
     subs = model.spacing_map
     subs[v.grid.time_dim.spacing] = dt
     op = Operator(expression, subs=subs, dse='aggressive', dle='advanced',
